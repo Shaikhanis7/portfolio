@@ -34,10 +34,10 @@ const PROJECTS = [
   link: "https://github.com/Shaikhanis7/IntelliHire", Icon: Bot, accent: "#2563eb",
 },
   {
-    id: 2, title: "Agentic RAG Mental Health Assistant", tag: "AI",
-    stack: ["LangGraph", "LangChain", "React", "FastAPI"],
-    desc: "AI mental health assistant using Retrieval-Augmented Generation for context-aware responses. Multi-agent workflows with memory and tool-calling for improved reasoning.",
-    link: "https://github.com/shaikhanis", Icon: BrainCircuit, accent: "#06b6d4",
+    id: 2, title: "MindfulAI — Agentic RAG Mental Health Assistant", tag: "AI",
+    stack: ["LangGraph", "LangChain", "FastAPI", "React", "ChromaDB", "Groq LLM", "IndicTrans2", "DeepFace"],
+    desc: "Full-stack AI mental wellness platform with agentic RAG chat, real-time crisis detection & emergency email alerts, DeepFace emotion analysis, 12-language IndicTrans2 support, voice I/O, mood tracking, wellness tasks, and an admin knowledge base portal.",
+    link: "https://github.com/Shaikhanis7/final_sem_project", Icon: BrainCircuit, accent: "#06b6d4",
   },
   {
     id: 3, title: "Freelancer Web Application", tag: "FULL STACK",
@@ -336,21 +336,13 @@ function GlowDivider() {
 }
 
 /* ─── SCROLL HELPER ──────────────────────────────────────── */
-/**
- * Closes the mobile menu first, then after the menu animation
- * finishes (~350ms), smoothly scrolls to the target section.
- * This prevents the layout-shift from the collapsing menu
- * from fighting the scroll position.
- */
 function useScrollTo(setOpen) {
   return (id) => {
-    // Close the drawer immediately
     setOpen(false);
-    // Wait for the AnimatePresence exit animation (height: 0, ~300ms) to finish
     setTimeout(() => {
       const el = document.getElementById(id);
       if (!el) return;
-      const navHeight = 70; // account for fixed navbar
+      const navHeight = 70;
       const top = el.getBoundingClientRect().top + window.scrollY - navHeight;
       window.scrollTo({ top, behavior: "smooth" });
     }, 350);
@@ -369,7 +361,6 @@ function Navbar({ active }) {
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  // Desktop scrollTo (no drawer to close)
   const desktopScrollTo = (id) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -394,7 +385,6 @@ function Navbar({ active }) {
       }}
     >
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 clamp(16px,4vw,24px)", display: "flex", alignItems: "center", justifyContent: "space-between", height: 70 }}>
-        {/* Logo */}
         <motion.div whileHover={{ scale: 1.05 }} onClick={() => desktopScrollTo("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ position: "relative" }}>
             <div style={{ width: 38, height: 38, borderRadius: 11, background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 14, color: "#fff", fontFamily: "monospace", boxShadow: `0 0 22px ${c.blue}55` }}>SA</div>
@@ -404,7 +394,6 @@ function Navbar({ active }) {
           <span style={{ color: c.text, fontWeight: 700, fontSize: 17, letterSpacing: "-0.3px" }}>Shaikh Anis</span>
         </motion.div>
 
-        {/* Desktop links */}
         <div style={{ display: "flex", gap: 2, alignItems: "center" }} className="nav-desktop">
           {links.map((s) => (
             <motion.button key={s} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
@@ -420,7 +409,6 @@ function Navbar({ active }) {
           </motion.a>
         </div>
 
-        {/* Mobile hamburger */}
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => setOpen(!open)}
           className="nav-mobile-btn"
           style={{ background: "none", border: `1px solid ${c.border}`, color: c.text, borderRadius: 8, padding: 8, cursor: "pointer", display: "none" }}>
@@ -428,7 +416,6 @@ function Navbar({ active }) {
         </motion.button>
       </div>
 
-      {/* Mobile drawer */}
       <AnimatePresence>
         {open && (
           <motion.div
