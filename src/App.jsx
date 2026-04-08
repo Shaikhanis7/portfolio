@@ -27,12 +27,12 @@ const c = {
 
 /* ─── DATA ───────────────────────────────────────────────── */
 const PROJECTS = [
-  {
-    id: 1, title: "Agentic AI Job Portal", tag: "FEATURED",
-    stack: ["React", "FastAPI", "PostgreSQL", "Docker"],
-    desc: "AI-powered job recommendation with RAG pipelines for semantic resume-job matching, multi-agent architecture, and an AI Interview Bot for automated candidate screening.",
-    link: "https://github.com/shaikhanis", Icon: Bot, accent: "#2563eb",
-  },
+ {
+  id: 1, title: "IntelliHire — Agentic AI Recruitment Platform", tag: "FEATURED",
+  stack: ["React", "FastAPI", "PostgreSQL", "Celery", "Redis", "AWS", "Groq LLM", "Gemini Embeddings"],
+  desc: "End-to-end agentic sourcing engine with a 6-pass pipeline that autonomously searches candidates, applies hybrid vector + LLM scoring, and delivers ranked, briefed shortlists.",
+  link: "https://github.com/Shaikhanis7/IntelliHire", Icon: Bot, accent: "#2563eb",
+},
   {
     id: 2, title: "Agentic RAG Mental Health Assistant", tag: "AI",
     stack: ["LangGraph", "LangChain", "React", "FastAPI"],
