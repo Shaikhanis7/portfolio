@@ -149,7 +149,6 @@ function ThreeBackground() {
     camera.position.z = 8;
     const rng = (a, b) => a + Math.random() * (b - a);
 
-    // Stars
     const s1n = isMobile ? 2000 : 5000;
     const s1p = new Float32Array(s1n * 3);
     for (let i = 0; i < s1n; i++) { s1p[i*3]=rng(-55,55); s1p[i*3+1]=rng(-95,95); s1p[i*3+2]=rng(-30,-8); }
@@ -157,7 +156,6 @@ function ThreeBackground() {
     const s1m = new THREE.PointsMaterial({ color: 0xffffff, size: 0.028, transparent: true, opacity: 0.45, sizeAttenuation: true });
     scene.add(new THREE.Points(s1g, s1m));
 
-    // Blue cloud
     const s2n = isMobile ? 1500 : 4000;
     const s2p = new Float32Array(s2n * 3);
     for (let i = 0; i < s2n; i++) { s2p[i*3]=rng(-34,34); s2p[i*3+1]=rng(-80,80); s2p[i*3+2]=rng(-14,0); }
@@ -165,7 +163,6 @@ function ThreeBackground() {
     const s2m = new THREE.PointsMaterial({ color: 0x3b82f6, size: 0.06, transparent: true, opacity: 0.3, sizeAttenuation: true });
     const blueCloud = new THREE.Points(s2g, s2m); scene.add(blueCloud);
 
-    // Cyan cloud
     const s3n = isMobile ? 800 : 2200;
     const s3p = new Float32Array(s3n * 3);
     for (let i = 0; i < s3n; i++) { s3p[i*3]=rng(-28,28); s3p[i*3+1]=rng(-70,70); s3p[i*3+2]=rng(-10,1); }
@@ -173,7 +170,6 @@ function ThreeBackground() {
     const s3m = new THREE.PointsMaterial({ color: 0x06b6d4, size: 0.045, transparent: true, opacity: 0.2, sizeAttenuation: true });
     const cyanCloud = new THREE.Points(s3g, s3m); scene.add(cyanCloud);
 
-    // Violet cloud
     const s4n = isMobile ? 500 : 1500;
     const s4p = new Float32Array(s4n * 3);
     for (let i = 0; i < s4n; i++) { s4p[i*3]=rng(-22,22); s4p[i*3+1]=rng(-65,65); s4p[i*3+2]=rng(-8,1); }
@@ -181,7 +177,6 @@ function ThreeBackground() {
     const s4m = new THREE.PointsMaterial({ color: 0x7c3aed, size: 0.055, transparent: true, opacity: 0.17, sizeAttenuation: true });
     const violetCloud = new THREE.Points(s4g, s4m); scene.add(violetCloud);
 
-    // Neural network nodes
     const nn = isMobile ? 45 : 90;
     const npos = Array.from({ length: nn }, () => new THREE.Vector3(rng(-20,20), rng(-60,60), rng(-6,0)));
     const npArr = new Float32Array(nn * 3);
@@ -196,7 +191,6 @@ function ThreeBackground() {
     const eGeo = new THREE.BufferGeometry(); eGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(edges), 3));
     scene.add(new THREE.LineSegments(eGeo, new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.09 })));
 
-    // Shooting stars
     const shooters = [];
     const shootN = isMobile ? 8 : 20;
     for (let i = 0; i < shootN; i++) {
@@ -208,7 +202,6 @@ function ThreeBackground() {
       scene.add(sl); shooters.push(sl);
     }
 
-    // DNA Helix
     const dna1=[], dna2=[], rungs=[];
     const dnaN=130;
     for (let i=0; i<dnaN; i++) {
@@ -223,7 +216,6 @@ function ThreeBackground() {
     dnaGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(rungs), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.08 })));
     scene.add(dnaGroup);
 
-    // Wireframe objects
     const wires = [
       { geo: new THREE.TorusKnotGeometry(1.7,0.4,160,32), col: 0x2563eb, op: 0.09, pos: [-6,7,-5] },
       { geo: new THREE.IcosahedronGeometry(1.3,1), col: 0x06b6d4, op: 0.08, pos: [5.5,-7,-3] },
@@ -236,7 +228,6 @@ function ThreeBackground() {
       m.position.set(...pos); scene.add(m); return m;
     });
 
-    // Floating rings
     const rings = [];
     [[4,9,-5,0x3b82f6],[-5,-9,-4,0x06b6d4],[7,-22,-5,0x7c3aed],[-4,22,-4,0x2563eb],[3,-38,-5,0x06b6d4]].forEach(([x,y,z,col]) => {
       const rg = new THREE.TorusGeometry(rng(0.7,1.2),0.035,8,44);
@@ -509,7 +500,8 @@ function Ticker() {
 function Hero() {
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 500], [0, 90]);
-  const opacity = useTransform(scrollY, [0, 350], [1, 0]);
+  // Fixed: extended opacity range so social links don't disappear too early
+  const opacity = useTransform(scrollY, [0, 600], [1, 0]);
   const [typed, setTyped] = useState("");
   const roles = ["Full Stack Developer", "Agentic AI Engineer", "LangChain Expert", "RAG Architect"];
   const roleRef = useRef(0);
@@ -589,13 +581,13 @@ function Hero() {
             </motion.div>
 
             <motion.p custom={3} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ fontSize: "clamp(13px,1.8vw,15px)", color: c.textDim, lineHeight: 1.85, marginBottom: 36, maxWidth: 480 }}>
+              style={{ fontSize: "clamp(13px,1.8vw,15px)", color: c.textDim, lineHeight: 1.85, marginBottom: 28, maxWidth: 480 }}>
               Building scalable applications and intelligent AI systems using React, FastAPI, LangChain & RAG pipelines.
             </motion.p>
 
             {/* Location */}
             <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 36 }}>
+              style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
               <MapPin size={14} color={c.textDim} />
               <span style={{ color: c.textDim, fontSize: 13 }}>Coimbatore, India</span>
               <span style={{ color: c.textDim, fontSize: 13, marginLeft: 4 }}>·</span>
@@ -603,37 +595,9 @@ function Hero() {
               <span style={{ color: c.textDim, fontSize: 13 }}>B.E. CSE · 2026</span>
             </motion.div>
 
-            {/* Stats */}
+            {/* Social icon row — moved up above stats */}
             <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", gap: "clamp(20px,4vw,44px)", marginBottom: 40, flexWrap: "wrap" }}>
-              {[["500+", "DSA Problems", c.blueBright], ["4+", "Projects", c.cyan], ["8.6", "CGPA", c.violet]].map(([num, label, col], i) => (
-                <motion.div key={label} whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}>
-                  <div style={{ fontSize: "clamp(26px,4.5vw,38px)", fontWeight: 900, letterSpacing: "-1.5px", color: col, textShadow: `0 0 28px ${col}60`, fontFamily: "'Syne', sans-serif" }}>{num}</div>
-                  <div style={{ fontSize: 11, color: c.textDim, marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div>
-                </motion.div>
-              ))}
-            </motion.div>
-
-            {/* CTA Buttons */}
-            <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
-              <motion.a href="mailto:shaikhaniscoder07@gmail.com"
-                whileHover={{ scale: 1.04, boxShadow: `0 0 50px ${c.blue}80` }}
-                whileTap={{ scale: 0.97 }}
-                style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "clamp(13px,2vw,15px) clamp(26px,3vw,36px)", borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: "clamp(13px,1.8vw,15px)", textDecoration: "none", boxShadow: `0 0 26px ${c.blue}50` }}>
-                <Mail size={15} /> Contact Me
-              </motion.a>
-              <motion.a href="https://github.com/Shaikhanis7" target="_blank" rel="noreferrer"
-                whileHover={{ scale: 1.04, borderColor: `${c.blue}80` }}
-                whileTap={{ scale: 0.97 }}
-                style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "clamp(13px,2vw,15px) clamp(26px,3vw,36px)", borderRadius: 14, background: "transparent", border: `1px solid ${c.border}`, color: c.text, fontWeight: 700, fontSize: "clamp(13px,1.8vw,15px)", textDecoration: "none", transition: "border-color 0.25s" }}>
-                <GitBranch size={15} /> GitHub
-              </motion.a>
-            </motion.div>
-
-            {/* Social icon row */}
-            <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 32 }}>
               <span style={{ color: c.textDim, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 4 }}>Find me on</span>
               {[
                 { href: "https://www.linkedin.com/in/shaikh-anis-s/", label: "LinkedIn", icon: <FaLinkedin size={15} />, color: "#0a66c2", bg: "rgba(10,102,194,0.12)", border: "rgba(10,102,194,0.3)" },
@@ -651,6 +615,34 @@ function Hero() {
                 </motion.a>
               ))}
             </motion.div>
+
+            {/* Stats */}
+            <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible"
+              style={{ display: "flex", gap: "clamp(20px,4vw,44px)", marginBottom: 40, flexWrap: "wrap" }}>
+              {[["500+", "DSA Problems", c.blueBright], ["4+", "Projects", c.cyan], ["8.6", "CGPA", c.violet]].map(([num, label, col], i) => (
+                <motion.div key={label} whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}>
+                  <div style={{ fontSize: "clamp(26px,4.5vw,38px)", fontWeight: 900, letterSpacing: "-1.5px", color: col, textShadow: `0 0 28px ${col}60`, fontFamily: "'Syne', sans-serif" }}>{num}</div>
+                  <div style={{ fontSize: 11, color: c.textDim, marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* CTA Buttons */}
+            <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible"
+              style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <motion.a href="mailto:shaikhaniscoder07@gmail.com"
+                whileHover={{ scale: 1.04, boxShadow: `0 0 50px ${c.blue}80` }}
+                whileTap={{ scale: 0.97 }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "clamp(13px,2vw,15px) clamp(26px,3vw,36px)", borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: "clamp(13px,1.8vw,15px)", textDecoration: "none", boxShadow: `0 0 26px ${c.blue}50` }}>
+                <Mail size={15} /> Contact Me
+              </motion.a>
+              <motion.a href="https://github.com/Shaikhanis7" target="_blank" rel="noreferrer"
+                whileHover={{ scale: 1.04, borderColor: `${c.blue}80` }}
+                whileTap={{ scale: 0.97 }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "clamp(13px,2vw,15px) clamp(26px,3vw,36px)", borderRadius: 14, background: "transparent", border: `1px solid ${c.border}`, color: c.text, fontWeight: 700, fontSize: "clamp(13px,1.8vw,15px)", textDecoration: "none", transition: "border-color 0.25s" }}>
+                <GitBranch size={15} /> GitHub
+              </motion.a>
+            </motion.div>
           </div>
 
           {/* RIGHT: Profile card */}
@@ -666,7 +658,6 @@ function Hero() {
                   style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: size, height: size, borderRadius: "50%", border: `1px ${i === 1 ? "solid" : "dashed"} rgba(${i===0?'59,130,246':i===1?'6,182,212':'124,58,237'},0.18)`, pointerEvents: "none" }} />
               ))}
 
-              {/* Card — NO overflow:hidden so floating tags are visible */}
               <div style={{
                 width: "clamp(240px,28vw,300px)", borderRadius: 30,
                 background: c.glass, backdropFilter: "blur(24px)",
@@ -674,13 +665,11 @@ function Hero() {
                 boxShadow: `0 0 140px ${c.blue}22, 0 60px 100px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)`,
                 padding: "clamp(26px,3vw,38px)", textAlign: "center", position: "relative",
               }}>
-                {/* Card bg shimmer */}
                 <div style={{ position: "absolute", inset: 0, borderRadius: 30, overflow: "hidden", pointerEvents: "none" }}>
                   <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
                     style={{ position: "absolute", top: 0, left: 0, width: "50%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)" }} />
                 </div>
 
-                {/* Avatar */}
                 <div style={{ position: "relative", width: 92, height: 92, margin: "0 auto 22px" }}>
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
                     style={{ position: "absolute", inset: -6, borderRadius: "50%", background: `conic-gradient(${c.blue}, ${c.cyan}, ${c.violet}, ${c.blue})`, opacity: 0.7 }} />
@@ -697,7 +686,6 @@ function Hero() {
                   <span style={{ color: c.blueBright, fontSize: 12, fontWeight: 700 }}>NPTEL Topper</span>
                 </div>
 
-                {/* Floating tags — OUTSIDE card's content flow, still inside the position:relative wrapper above */}
                 {[
                   { label: "⚡ FastAPI",   style: { left: -130, top: "18%" } },
                   { label: "🤖 AI Agents", style: { right: -136, top: "35%" } },
@@ -766,7 +754,6 @@ function Skills() {
                 boxShadow: "0 4px 24px rgba(0,0,0,0.2)"
               }}>
               <div style={{ position: "absolute", top: -30, right: -30, width: 100, height: 100, borderRadius: "50%", background: `${group.accent}08`, pointerEvents: "none" }} />
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${group.accent}00, ${group.accent}50, ${group.accent}00)`, opacity: 0, transition: "opacity 0.35s" }} className="skill-line" />
               <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 18 }}>
                 <div style={{ width: 46, height: 46, borderRadius: 13, background: `linear-gradient(135deg, ${group.accent}28, ${group.accent}14)`, border: `1px solid ${group.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <group.Icon size={21} color={group.accent} />
@@ -816,15 +803,11 @@ function Experience() {
           <h2 style={{ fontSize: "clamp(30px,5.5vw,62px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>Experience</h2>
         </motion.div>
 
-        {/* Main experience card */}
         <motion.div custom={1} variants={fadeUp}
           whileHover={{ borderColor: `${c.blue}50`, boxShadow: `0 0 60px ${c.blue}12, 0 40px 70px rgba(0,0,0,0.25)` }}
           style={{ background: c.glass, backdropFilter: "blur(20px)", border: `1px solid rgba(59,130,246,0.15)`, borderRadius: 26, padding: "clamp(24px,4vw,44px)", marginBottom: 24, position: "relative", overflow: "hidden", transition: "all 0.4s ease" }}>
-          {/* Side accent */}
           <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: `linear-gradient(180deg, ${c.blue}, ${c.cyan}, ${c.violet})`, borderRadius: "4px 0 0 4px" }} />
-          {/* Glow orb */}
           <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}10, transparent 70%)`, pointerEvents: "none" }} />
-          {/* Shimmer */}
           <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 5, repeat: Infinity, repeatDelay: 4, ease: "easeInOut" }}
             style={{ position: "absolute", top: 0, left: 0, width: "40%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)", pointerEvents: "none" }} />
 
@@ -868,7 +851,6 @@ function Experience() {
           </div>
         </motion.div>
 
-        {/* Education cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,290px), 1fr))", gap: 20 }}>
           {[
             { icon: <GraduationCap size={22} color={c.cyan} />, degree: "B.E. Computer Science & Engineering", school: "Sri Krishna College of Technology · 2022–2026", grade: "CGPA: 8.6", col: c.cyan },
@@ -910,11 +892,8 @@ function Projects() {
             <motion.div key={proj.id} custom={i+1} variants={fadeUp}
               whileHover={{ y: -14, boxShadow: `0 40px 90px ${proj.accent}22, 0 0 0 1px ${proj.accent}40` }}
               style={{ background: c.glass, backdropFilter: "blur(18px)", border: `1px solid rgba(59,130,246,0.14)`, borderRadius: 26, padding: "clamp(22px,3vw,32px)", position: "relative", overflow: "hidden", transition: "all 0.4s ease" }}>
-              {/* Corner blobs */}
               <div style={{ position: "absolute", top: 0, right: 0, width: 160, height: 160, borderRadius: "0 26px 0 160px", background: `${proj.accent}0c`, pointerEvents: "none" }} />
               <div style={{ position: "absolute", bottom: 0, left: 0, width: 100, height: 100, borderRadius: "0 100px 0 26px", background: `${proj.accent}07`, pointerEvents: "none" }} />
-
-              {/* Shimmer */}
               <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 5, ease: "easeInOut" }}
                 style={{ position: "absolute", top: 0, left: 0, width: "35%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)", pointerEvents: "none" }} />
 
@@ -960,7 +939,6 @@ function Projects() {
                 )}
               </div>
 
-              {/* Bottom accent line */}
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${proj.accent}80, ${proj.accent}20, transparent)` }} />
             </motion.div>
           ))}
@@ -980,6 +958,7 @@ function Contact() {
       <GlowDivider />
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(50px,6vw,90px) clamp(16px,4vw,24px) 0" }}>
         <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(36px,5vw,70px)", alignItems: "start" }}>
+          {/* LEFT — only email and phone */}
           <div>
             <motion.p variants={fadeUp} custom={0} style={{ color: c.cyan, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 14 }}>Get In Touch</motion.p>
             <motion.h2 variants={fadeUp} custom={1}
@@ -992,15 +971,12 @@ function Contact() {
               Open to full-time roles, freelance projects, and AI / Full Stack collaborations. Based in Coimbatore — available remotely worldwide.
             </motion.p>
 
+            {/* Only email and phone in the contact list */}
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {[
                 { icon: <Mail size={15} color={c.blueBright} />, label: "shaikhaniscoder07@gmail.com", href: "mailto:shaikhaniscoder07@gmail.com" },
                 { icon: <Phone size={15} color={c.cyan} />, label: "+91 7548899769", href: "tel:+917548899769" },
                 { icon: <FaLinkedin size={15} color={c.blueBright} />, label: "LinkedIn — shaikh-anis-s", href: "https://www.linkedin.com/in/shaikh-anis-s/" },
-                { icon: <GitBranch size={15} color={c.violet} />, label: "GitHub — Shaikhanis7", href: "https://github.com/Shaikhanis7" },
-                { icon: <Code2 size={15} color="#ffa116" />, label: "LeetCode — Shaikh_the_coder", href: "https://leetcode.com/u/Shaikh_the_coder/" },
-                { icon: <Cpu size={15} color="#2f8d46" />, label: "GeeksforGeeks — shaikhanibqym", href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity" },
-                { icon: <Mic size={15} color={c.cyan} />, label: "HuggingFace — ShaikhAnis007", href: "https://huggingface.co/ShaikhAnis007" },
               ].map(({ icon, label, href }, i) => (
                 <motion.a key={label} custom={i+3} variants={fadeUp}
                   href={href} target="_blank" rel="noreferrer"
@@ -1014,6 +990,7 @@ function Contact() {
             </div>
           </div>
 
+          {/* RIGHT — email card + all social buttons */}
           <motion.div variants={scaleIn}>
             <div style={{
               background: c.glass, backdropFilter: "blur(24px)",
@@ -1053,16 +1030,18 @@ function Contact() {
                 <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${c.border}, transparent)` }} />
               </div>
 
+              {/* All social links in the card */}
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {[
                   { label: "LinkedIn", icon: <FaLinkedin size={14} />, href: "https://www.linkedin.com/in/shaikh-anis-s/" },
                   { label: "GitHub", icon: <GitBranch size={14} />, href: "https://github.com/Shaikhanis7" },
                   { label: "LeetCode", icon: <Code2 size={14} />, href: "https://leetcode.com/u/Shaikh_the_coder/" },
                   { label: "GFG", icon: <Cpu size={14} />, href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity" },
+                  { label: "HuggingFace", icon: <Mic size={14} />, href: "https://huggingface.co/ShaikhAnis007" },
                 ].map(({ label, icon, href }) => (
                   <motion.a key={label} href={href} target="_blank" rel="noreferrer"
                     whileHover={{ scale: 1.06, borderColor: c.blue, boxShadow: `0 0 16px ${c.blue}22` }}
-                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "13px 8px", borderRadius: 13, border: `1px solid ${c.border}`, color: c.textMuted, fontWeight: 600, fontSize: "clamp(10px,1.5vw,12px)", textDecoration: "none", transition: "all 0.25s", background: "rgba(3,9,18,0.3)" }}>
+                    style={{ flex: "1 1 auto", minWidth: "calc(33% - 8px)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "13px 8px", borderRadius: 13, border: `1px solid ${c.border}`, color: c.textMuted, fontWeight: 600, fontSize: "clamp(10px,1.5vw,12px)", textDecoration: "none", transition: "all 0.25s", background: "rgba(3,9,18,0.3)" }}>
                     {icon} {label}
                   </motion.a>
                 ))}
