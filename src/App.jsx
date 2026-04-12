@@ -70,7 +70,7 @@ const SKILLS = [
 const TICKER_ITEMS = [
   "Full Stack Developer", "Agentic AI Engineer", "LangChain & LangGraph",
   "RAG Pipelines", "React & Angular", "FastAPI & Spring Boot",
-  "Docker & Kubernetes", "400+ DSA Problems", "Whisper Fine-tuning", "HuggingFace",
+  "Docker & Kubernetes", "500+ DSA Problems", "Whisper Fine-tuning", "HuggingFace",
 ];
 
 /* ─── ANIMATION VARIANTS ──────────────────────────────────── */
@@ -606,7 +606,7 @@ function Hero() {
             {/* Stats */}
             <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible"
               style={{ display: "flex", gap: "clamp(20px,4vw,44px)", marginBottom: 40, flexWrap: "wrap" }}>
-              {[["400+", "DSA Problems", c.blueBright], ["4+", "AI Projects", c.cyan], ["8.6", "CGPA", c.violet]].map(([num, label, col], i) => (
+              {[["500+", "DSA Problems", c.blueBright], ["4+", "Projects", c.cyan], ["8.6", "CGPA", c.violet]].map(([num, label, col], i) => (
                 <motion.div key={label} whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}>
                   <div style={{ fontSize: "clamp(26px,4.5vw,38px)", fontWeight: 900, letterSpacing: "-1.5px", color: col, textShadow: `0 0 28px ${col}60`, fontFamily: "'Syne', sans-serif" }}>{num}</div>
                   <div style={{ fontSize: 11, color: c.textDim, marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div>
@@ -636,26 +636,28 @@ function Hero() {
           <motion.div className="hero-card" custom={3} variants={scaleIn} initial="hidden" animate="visible"
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 28 }}>
             <motion.div animate={{ y: [-12, 10, -12] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              style={{ position: "relative", padding: "36px 130px 36px" }}>
+              style={{ position: "relative", padding: "36px 140px 36px" }}>
               {/* Orbit rings */}
-              {[380, 320, 265].map((size, i) => (
+              {[390, 330, 272].map((size, i) => (
                 <motion.div key={size}
                   animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
                   transition={{ duration: [28, 20, 14][i], repeat: Infinity, ease: "linear" }}
                   style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: size, height: size, borderRadius: "50%", border: `1px ${i === 1 ? "solid" : "dashed"} rgba(${i===0?'59,130,246':i===1?'6,182,212':'124,58,237'},0.18)`, pointerEvents: "none" }} />
               ))}
 
-              {/* Card */}
+              {/* Card — NO overflow:hidden so floating tags are visible */}
               <div style={{
                 width: "clamp(240px,28vw,300px)", borderRadius: 30,
                 background: c.glass, backdropFilter: "blur(24px)",
                 border: `1px solid rgba(59,130,246,0.22)`,
                 boxShadow: `0 0 140px ${c.blue}22, 0 60px 100px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)`,
-                padding: "clamp(26px,3vw,38px)", textAlign: "center", position: "relative", overflow: "hidden"
+                padding: "clamp(26px,3vw,38px)", textAlign: "center", position: "relative",
               }}>
                 {/* Card bg shimmer */}
-                <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
-                  style={{ position: "absolute", top: 0, left: 0, width: "50%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)", pointerEvents: "none" }} />
+                <div style={{ position: "absolute", inset: 0, borderRadius: 30, overflow: "hidden", pointerEvents: "none" }}>
+                  <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+                    style={{ position: "absolute", top: 0, left: 0, width: "50%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)" }} />
+                </div>
 
                 {/* Avatar */}
                 <div style={{ position: "relative", width: 92, height: 92, margin: "0 auto 22px" }}>
@@ -674,25 +676,25 @@ function Hero() {
                   <span style={{ color: c.blueBright, fontSize: 12, fontWeight: 700 }}>NPTEL Topper</span>
                 </div>
 
-                {/* Floating tags */}
+                {/* Floating tags — OUTSIDE card's content flow, still inside the position:relative wrapper above */}
                 {[
-                  { label: "⚡ FastAPI", left: -118, top: 20 },
-                  { label: "🤖 AI Agents", right: -126, top: 44 },
-                  { label: "⚛️ React", left: -104, bottom: 44 },
-                  { label: "🎙️ Whisper", right: -116, bottom: 22 },
-                ].map(({ label, left, right, top, bottom }, i) => (
+                  { label: "⚡ FastAPI",   style: { left: -130, top: "18%" } },
+                  { label: "🤖 AI Agents", style: { right: -136, top: "35%" } },
+                  { label: "⚛️ React",     style: { left: -116, bottom: "28%" } },
+                  { label: "🎙️ Whisper",   style: { right: -124, bottom: "14%" } },
+                ].map(({ label, style }, i) => (
                   <motion.div key={label}
                     animate={{ y: [0, -10, 0] }}
                     transition={{ duration: 3.4 + i * 0.65, repeat: Infinity, delay: i * 0.55 }}
                     style={{
                       position: "absolute",
-                      ...(left !== undefined ? { left } : { right }),
-                      ...(top !== undefined ? { top } : { bottom }),
+                      ...style,
                       background: "rgba(3,9,18,0.92)", backdropFilter: "blur(16px)",
-                      border: `1px solid rgba(59,130,246,0.28)`,
-                      borderRadius: 100, padding: "7px 15px", fontSize: 11,
+                      border: `1px solid rgba(59,130,246,0.3)`,
+                      borderRadius: 100, padding: "8px 16px", fontSize: 11,
                       color: c.textMuted, fontWeight: 600, whiteSpace: "nowrap",
-                      boxShadow: `0 8px 28px rgba(0,0,0,0.5), 0 0 18px ${c.blue}20`,
+                      boxShadow: `0 8px 28px rgba(0,0,0,0.5), 0 0 20px ${c.blue}25`,
+                      zIndex: 10,
                     }}>
                     {label}
                   </motion.div>
@@ -973,8 +975,10 @@ function Contact() {
               {[
                 { icon: <Mail size={15} color={c.blueBright} />, label: "shaikhaniscoder07@gmail.com", href: "mailto:shaikhaniscoder07@gmail.com" },
                 { icon: <Phone size={15} color={c.cyan} />, label: "+91 7548899769", href: "tel:+917548899769" },
-                { icon: <FaLinkedin size={15} color={c.blueBright} />, label: "LinkedIn Profile", href: "https://linkedin.com" },
-                { icon: <GitBranch size={15} color={c.violet} />, label: "GitHub Profile", href: "https://github.com/shaikhanis" },
+                { icon: <FaLinkedin size={15} color={c.blueBright} />, label: "LinkedIn — shaikh-anis-s", href: "https://www.linkedin.com/in/shaikh-anis-s/" },
+                { icon: <GitBranch size={15} color={c.violet} />, label: "GitHub — shaikhanis", href: "https://github.com/shaikhanis" },
+                { icon: <Code2 size={15} color="#ffa116" />, label: "LeetCode — Shaikh_the_coder", href: "https://leetcode.com/u/Shaikh_the_coder/" },
+                { icon: <Cpu size={15} color="#2f8d46" />, label: "GeeksforGeeks — shaikhanibqym", href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity" },
                 { icon: <Mic size={15} color={c.cyan} />, label: "HuggingFace — ShaikhAnis007", href: "https://huggingface.co/ShaikhAnis007" },
               ].map(({ icon, label, href }, i) => (
                 <motion.a key={label} custom={i+3} variants={fadeUp}
@@ -1028,11 +1032,12 @@ function Contact() {
                 <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${c.border}, transparent)` }} />
               </div>
 
-              <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {[
-                  { label: "LinkedIn", icon: <FaLinkedin size={14} />, href: "https://linkedin.com" },
+                  { label: "LinkedIn", icon: <FaLinkedin size={14} />, href: "https://www.linkedin.com/in/shaikh-anis-s/" },
                   { label: "GitHub", icon: <GitBranch size={14} />, href: "https://github.com/shaikhanis" },
-                  { label: "HuggingFace", icon: <Mic size={14} />, href: "https://huggingface.co/ShaikhAnis007" },
+                  { label: "LeetCode", icon: <Code2 size={14} />, href: "https://leetcode.com/u/Shaikh_the_coder/" },
+                  { label: "GFG", icon: <Cpu size={14} />, href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity" },
                 ].map(({ label, icon, href }) => (
                   <motion.a key={label} href={href} target="_blank" rel="noreferrer"
                     whileHover={{ scale: 1.06, borderColor: c.blue, boxShadow: `0 0 16px ${c.blue}22` }}
