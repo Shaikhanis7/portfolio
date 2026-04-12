@@ -54,7 +54,7 @@ const PROJECTS = [
     id: 4, title: "Freelancer App", subtitle: "Full Stack Web Platform", tag: "FULL STACK",
     stack: ["React", "Spring Boot", "MySQL", "JWT", "Spring Security"],
     desc: "Secure full-stack platform with JWT authentication, RBAC with Spring Security, and scalable backend APIs using Spring Boot REST architecture and JPA/Hibernate.",
-    link: "https://github.com/shaikhanis", Icon: Users, accent: "#ec4899", accentDark: "#9d174d",
+    link: "https://github.com/Shaikhanis7", Icon: Users, accent: "#ec4899", accentDark: "#9d174d",
   },
 ];
 
@@ -614,21 +614,42 @@ function Hero() {
               ))}
             </motion.div>
 
-            {/* CTA */}
+            {/* CTA Buttons */}
             <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
               <motion.a href="mailto:shaikhaniscoder07@gmail.com"
                 whileHover={{ scale: 1.04, boxShadow: `0 0 50px ${c.blue}80` }}
                 whileTap={{ scale: 0.97 }}
                 style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "clamp(13px,2vw,15px) clamp(26px,3vw,36px)", borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: "clamp(13px,1.8vw,15px)", textDecoration: "none", boxShadow: `0 0 26px ${c.blue}50` }}>
                 <Mail size={15} /> Contact Me
               </motion.a>
-              <motion.a href="https://github.com/shaikhanis" target="_blank" rel="noreferrer"
+              <motion.a href="https://github.com/Shaikhanis7" target="_blank" rel="noreferrer"
                 whileHover={{ scale: 1.04, borderColor: `${c.blue}80` }}
                 whileTap={{ scale: 0.97 }}
                 style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "clamp(13px,2vw,15px) clamp(26px,3vw,36px)", borderRadius: 14, background: "transparent", border: `1px solid ${c.border}`, color: c.text, fontWeight: 700, fontSize: "clamp(13px,1.8vw,15px)", textDecoration: "none", transition: "border-color 0.25s" }}>
                 <GitBranch size={15} /> GitHub
               </motion.a>
+            </motion.div>
+
+            {/* Social icon row */}
+            <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible"
+              style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ color: c.textDim, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 4 }}>Find me on</span>
+              {[
+                { href: "https://www.linkedin.com/in/shaikh-anis-s/", label: "LinkedIn", icon: <FaLinkedin size={15} />, color: "#0a66c2", bg: "rgba(10,102,194,0.12)", border: "rgba(10,102,194,0.3)" },
+                { href: "https://leetcode.com/u/Shaikh_the_coder/", label: "LeetCode", icon: <Code2 size={15} />, color: "#ffa116", bg: "rgba(255,161,22,0.1)", border: "rgba(255,161,22,0.28)" },
+                { href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity", label: "GFG", icon: <Cpu size={15} />, color: "#2f8d46", bg: "rgba(47,141,70,0.1)", border: "rgba(47,141,70,0.28)" },
+                { href: "https://huggingface.co/ShaikhAnis007", label: "HuggingFace", icon: <Mic size={15} />, color: c.cyan, bg: `rgba(6,182,212,0.1)`, border: `rgba(6,182,212,0.28)` },
+              ].map(({ href, label, icon, color, bg, border }) => (
+                <motion.a key={label} href={href} target="_blank" rel="noreferrer"
+                  whileHover={{ scale: 1.1, y: -3, boxShadow: `0 8px 24px ${color}30` }}
+                  whileTap={{ scale: 0.95 }}
+                  title={label}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 15px", borderRadius: 11, background: bg, border: `1px solid ${border}`, color, fontWeight: 600, fontSize: 12, textDecoration: "none", transition: "all 0.25s", backdropFilter: "blur(10px)" }}>
+                  {icon}
+                  <span className="social-label">{label}</span>
+                </motion.a>
+              ))}
             </motion.div>
           </div>
 
@@ -976,7 +997,7 @@ function Contact() {
                 { icon: <Mail size={15} color={c.blueBright} />, label: "shaikhaniscoder07@gmail.com", href: "mailto:shaikhaniscoder07@gmail.com" },
                 { icon: <Phone size={15} color={c.cyan} />, label: "+91 7548899769", href: "tel:+917548899769" },
                 { icon: <FaLinkedin size={15} color={c.blueBright} />, label: "LinkedIn — shaikh-anis-s", href: "https://www.linkedin.com/in/shaikh-anis-s/" },
-                { icon: <GitBranch size={15} color={c.violet} />, label: "GitHub — shaikhanis", href: "https://github.com/shaikhanis" },
+                { icon: <GitBranch size={15} color={c.violet} />, label: "GitHub — Shaikhanis7", href: "https://github.com/Shaikhanis7" },
                 { icon: <Code2 size={15} color="#ffa116" />, label: "LeetCode — Shaikh_the_coder", href: "https://leetcode.com/u/Shaikh_the_coder/" },
                 { icon: <Cpu size={15} color="#2f8d46" />, label: "GeeksforGeeks — shaikhanibqym", href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity" },
                 { icon: <Mic size={15} color={c.cyan} />, label: "HuggingFace — ShaikhAnis007", href: "https://huggingface.co/ShaikhAnis007" },
@@ -1035,7 +1056,7 @@ function Contact() {
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {[
                   { label: "LinkedIn", icon: <FaLinkedin size={14} />, href: "https://www.linkedin.com/in/shaikh-anis-s/" },
-                  { label: "GitHub", icon: <GitBranch size={14} />, href: "https://github.com/shaikhanis" },
+                  { label: "GitHub", icon: <GitBranch size={14} />, href: "https://github.com/Shaikhanis7" },
                   { label: "LeetCode", icon: <Code2 size={14} />, href: "https://leetcode.com/u/Shaikh_the_coder/" },
                   { label: "GFG", icon: <Cpu size={14} />, href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity" },
                 ].map(({ label, icon, href }) => (
@@ -1115,6 +1136,7 @@ const GlobalStyles = () => (
     }
     @media (max-width: 480px) {
       .hero-grid { padding-top: 100px !important; }
+      .social-label { display: none; }
     }
   `}</style>
 );
