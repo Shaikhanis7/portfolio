@@ -1,68 +1,70 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useInView } from "framer-motion";
 import * as THREE from "three";
 import {
   Mail, Phone, ExternalLink, Menu, X, Copy, Check,
   Cpu, Globe, Server, Database, Bot, Cloud, Code2, Briefcase, GraduationCap,
   ChevronRight, Sparkles, ArrowUpRight, Zap, Star, Award, GitBranch,
-  BrainCircuit, Users, Mic
+  BrainCircuit, Users, Mic, MapPin, Calendar
 } from "lucide-react";
 import { FaLinkedin } from "react-icons/fa";
 
-/* ─── THEME ──────────────────────────────────────────────── */
+/* ─── PALETTE ─────────────────────────────────────────────── */
 const c = {
-  bg: "#020810",
+  bg: "#030912",
   blue: "#2563eb",
   blueBright: "#3b82f6",
   blueGlow: "#1d4ed8",
   blueLight: "#60a5fa",
-  blueDim: "#1e40af18",
+  blueDim: "#1e40af12",
   cyan: "#06b6d4",
   violet: "#7c3aed",
-  border: "#1a2e4a",
-  text: "#f0f6ff",
-  textMuted: "#94a3b8",
-  textDim: "#475569",
+  pink: "#ec4899",
+  border: "#162035",
+  text: "#eef4ff",
+  textMuted: "#8ba4c2",
+  textDim: "#3d5270",
+  glass: "rgba(6,15,35,0.6)",
 };
 
 /* ─── DATA ───────────────────────────────────────────────── */
 const PROJECTS = [
   {
-    id: 1, title: "IntelliHire — Agentic AI Recruitment Platform", tag: "FEATURED",
+    id: 1, title: "IntelliHire", subtitle: "Agentic AI Recruitment Platform", tag: "FEATURED",
     stack: ["React", "FastAPI", "PostgreSQL", "Celery", "Redis", "AWS", "Groq LLM", "Gemini Embeddings"],
     desc: "End-to-end agentic sourcing engine with a 6-pass pipeline that autonomously searches candidates, applies hybrid vector + LLM scoring, and delivers ranked, briefed shortlists.",
-    link: "https://github.com/Shaikhanis7/IntelliHire", Icon: Bot, accent: "#2563eb",
+    link: "https://github.com/Shaikhanis7/IntelliHire", Icon: Bot, accent: "#2563eb", accentDark: "#1d40af",
   },
   {
-    id: 2, title: "MindfulAI — Agentic RAG Mental Health Assistant", tag: "AI",
+    id: 2, title: "MindfulAI", subtitle: "Agentic RAG Mental Health Assistant", tag: "AI",
     stack: ["LangGraph", "LangChain", "FastAPI", "React", "ChromaDB", "Groq LLM", "IndicTrans2", "DeepFace"],
-    desc: "Full-stack AI mental wellness platform with agentic RAG chat, real-time crisis detection & emergency email alerts, DeepFace emotion analysis, 12-language IndicTrans2 support, voice I/O, mood tracking, wellness tasks, and an admin knowledge base portal.",
-    link: "https://github.com/Shaikhanis7/final_sem_project", Icon: BrainCircuit, accent: "#06b6d4",
+    desc: "Full-stack AI mental wellness platform with agentic RAG chat, real-time crisis detection & emergency alerts, DeepFace emotion analysis, 12-language support, voice I/O, mood tracking.",
+    link: "https://github.com/Shaikhanis7/final_sem_project", Icon: BrainCircuit, accent: "#06b6d4", accentDark: "#0e7490",
   },
   {
-    id: 3, title: "Hindi STT — Whisper Medium Fine-tuned", tag: "ML / NLP",
-    stack: ["Python", "Whisper Medium", "HuggingFace", "Seq2SeqTrainer", "Kathbath", "Transformers", "Google Colab"],
-    desc: "Fine-tuned OpenAI Whisper Medium on AI4Bharat Kathbath Hindi speech dataset. Achieved 47.1% WER reduction (0.41 → 0.22) and 69.4% CER reduction using Seq2SeqTrainer with WER-aware evaluation, gradient checkpointing, and linear LR scheduler. Model published on HuggingFace Hub.",
+    id: 3, title: "Hindi STT", subtitle: "Whisper Medium Fine-tuned", tag: "ML / NLP",
+    stack: ["Python", "Whisper Medium", "HuggingFace", "Seq2SeqTrainer", "Kathbath", "Transformers"],
+    desc: "Fine-tuned OpenAI Whisper Medium on AI4Bharat Kathbath Hindi speech dataset. Achieved 47.1% WER reduction (0.41→0.22) and 69.4% CER reduction. Model published on HuggingFace Hub.",
     link: "https://huggingface.co/ShaikhAnis007/whisper-medium-hindi",
     colab: "https://colab.research.google.com/drive/1fHOK2ymEmDiWI4_XShxcZKnP3OjySqLg?usp=sharing",
-    Icon: Mic, accent: "#7c3aed",
+    Icon: Mic, accent: "#7c3aed", accentDark: "#5b21b6",
     badge: "WER ↓47.1%",
   },
   {
-    id: 4, title: "Freelancer Web Application", tag: "FULL STACK",
-    stack: ["React", "Spring Boot", "MySQL"],
+    id: 4, title: "Freelancer App", subtitle: "Full Stack Web Platform", tag: "FULL STACK",
+    stack: ["React", "Spring Boot", "MySQL", "JWT", "Spring Security"],
     desc: "Secure full-stack platform with JWT authentication, RBAC with Spring Security, and scalable backend APIs using Spring Boot REST architecture and JPA/Hibernate.",
-    link: "https://github.com/shaikhanis", Icon: Users, accent: "#3b82f6",
+    link: "https://github.com/shaikhanis", Icon: Users, accent: "#ec4899", accentDark: "#9d174d",
   },
 ];
 
 const SKILLS = [
-  { category: "Languages", items: ["Java", "Python", "C++", "JavaScript", "TypeScript"], Icon: Code2 },
-  { category: "Frontend", items: ["React", "Angular", "HTML", "CSS"], Icon: Globe },
-  { category: "Backend", items: ["Spring Boot", "FastAPI"], Icon: Server },
-  { category: "Databases", items: ["PostgreSQL", "MySQL", "MongoDB"], Icon: Database },
-  { category: "AI / ML", items: ["LangChain", "LangGraph", "RAG", "AI Agents", "Transformers", "Whisper", "HuggingFace", "PyTorch", "Fine-tuning"], Icon: Bot },
-  { category: "DevOps", items: ["Docker", "Kubernetes", "AWS", "GCP", "CI/CD"], Icon: Cloud },
+  { category: "Languages", items: ["Java", "Python", "C++", "JavaScript", "TypeScript"], Icon: Code2, accent: "#3b82f6" },
+  { category: "Frontend", items: ["React", "Angular", "HTML", "CSS"], Icon: Globe, accent: "#06b6d4" },
+  { category: "Backend", items: ["Spring Boot", "FastAPI"], Icon: Server, accent: "#7c3aed" },
+  { category: "Databases", items: ["PostgreSQL", "MySQL", "MongoDB"], Icon: Database, accent: "#ec4899" },
+  { category: "AI / ML", items: ["LangChain", "LangGraph", "RAG", "AI Agents", "Transformers", "Whisper", "HuggingFace", "PyTorch", "Fine-tuning"], Icon: Bot, accent: "#3b82f6" },
+  { category: "DevOps", items: ["Docker", "Kubernetes", "AWS", "GCP", "CI/CD"], Icon: Cloud, accent: "#06b6d4" },
 ];
 
 const TICKER_ITEMS = [
@@ -71,152 +73,181 @@ const TICKER_ITEMS = [
   "Docker & Kubernetes", "400+ DSA Problems", "Whisper Fine-tuning", "HuggingFace",
 ];
 
-/* ─── ANIMATIONS ─────────────────────────────────────────── */
+/* ─── ANIMATION VARIANTS ──────────────────────────────────── */
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] } }),
+  hidden: { opacity: 0, y: 50, filter: "blur(6px)" },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0, filter: "blur(0px)",
+    transition: { duration: 0.8, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }
+  }),
 };
 const scaleIn = {
-  hidden: { opacity: 0, scale: 0.88 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  hidden: { opacity: 0, scale: 0.85, filter: "blur(8px)" },
+  visible: { opacity: 1, scale: 1, filter: "blur(0px)", transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
+};
+const slideLeft = {
+  hidden: { opacity: 0, x: -60, filter: "blur(6px)" },
+  visible: (i = 0) => ({
+    opacity: 1, x: 0, filter: "blur(0px)",
+    transition: { duration: 0.8, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }
+  }),
 };
 
-/* ══════════════════════════════════════════════════════════
-   THREE.JS MULTI-LAYER BACKGROUND
-══════════════════════════════════════════════════════════ */
+/* ─── MAGNETIC CURSOR ─────────────────────────────────────── */
+function MagneticCursor() {
+  const cursorRef = useRef(null);
+  const dotRef = useRef(null);
+  const posRef = useRef({ x: 0, y: 0 });
+  const targetRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (window.innerWidth < 768) return;
+    let raf;
+    const move = (e) => { targetRef.current = { x: e.clientX, y: e.clientY }; };
+    window.addEventListener("mousemove", move);
+    const tick = () => {
+      posRef.current.x += (targetRef.current.x - posRef.current.x) * 0.12;
+      posRef.current.y += (targetRef.current.y - posRef.current.y) * 0.12;
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate(${posRef.current.x - 20}px, ${posRef.current.y - 20}px)`;
+      }
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate(${targetRef.current.x - 4}px, ${targetRef.current.y - 4}px)`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    const hoverEls = document.querySelectorAll("a, button, [data-magnetic]");
+    const over = () => { cursorRef.current && (cursorRef.current.style.width = "60px", cursorRef.current.style.height = "60px", cursorRef.current.style.opacity = "0.6"); };
+    const out = () => { cursorRef.current && (cursorRef.current.style.width = "40px", cursorRef.current.style.height = "40px", cursorRef.current.style.opacity = "0.35"); };
+    hoverEls.forEach(el => { el.addEventListener("mouseenter", over); el.addEventListener("mouseleave", out); });
+    return () => { window.removeEventListener("mousemove", move); cancelAnimationFrame(raf); };
+  }, []);
+
+  return (
+    <>
+      <div ref={cursorRef} style={{ position: "fixed", width: 40, height: 40, borderRadius: "50%", border: `1.5px solid ${c.blueBright}`, opacity: 0.35, pointerEvents: "none", zIndex: 9999, top: 0, left: 0, transition: "width 0.3s, height 0.3s, opacity 0.3s", mixBlendMode: "difference" }} />
+      <div ref={dotRef} style={{ position: "fixed", width: 8, height: 8, borderRadius: "50%", background: c.blueBright, opacity: 0.9, pointerEvents: "none", zIndex: 9999, top: 0, left: 0 }} />
+    </>
+  );
+}
+
+/* ─── THREE.JS BACKGROUND ─────────────────────────────────── */
 function ThreeBackground() {
   const canvasRef = useRef(null);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const W = () => window.innerWidth;
     const H = () => document.documentElement.scrollHeight;
     const isMobile = W() < 768;
-
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W(), H());
-
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(55, W() / H(), 0.1, 2000);
     camera.position.z = 8;
-
     const rng = (a, b) => a + Math.random() * (b - a);
 
-    const s1n = isMobile ? 2500 : 6000;
+    // Stars
+    const s1n = isMobile ? 2000 : 5000;
     const s1p = new Float32Array(s1n * 3);
-    for (let i = 0; i < s1n; i++) { s1p[i*3]=rng(-50,50); s1p[i*3+1]=rng(-90,90); s1p[i*3+2]=rng(-30,-8); }
-    const s1g = new THREE.BufferGeometry();
-    s1g.setAttribute("position", new THREE.BufferAttribute(s1p, 3));
-    const s1m = new THREE.PointsMaterial({ color: 0xffffff, size: 0.03, transparent: true, opacity: 0.5, sizeAttenuation: true });
+    for (let i = 0; i < s1n; i++) { s1p[i*3]=rng(-55,55); s1p[i*3+1]=rng(-95,95); s1p[i*3+2]=rng(-30,-8); }
+    const s1g = new THREE.BufferGeometry(); s1g.setAttribute("position", new THREE.BufferAttribute(s1p, 3));
+    const s1m = new THREE.PointsMaterial({ color: 0xffffff, size: 0.028, transparent: true, opacity: 0.45, sizeAttenuation: true });
     scene.add(new THREE.Points(s1g, s1m));
 
-    const s2n = isMobile ? 2000 : 4500;
+    // Blue cloud
+    const s2n = isMobile ? 1500 : 4000;
     const s2p = new Float32Array(s2n * 3);
-    for (let i = 0; i < s2n; i++) { s2p[i*3]=rng(-32,32); s2p[i*3+1]=rng(-75,75); s2p[i*3+2]=rng(-14,0); }
-    const s2g = new THREE.BufferGeometry();
-    s2g.setAttribute("position", new THREE.BufferAttribute(s2p, 3));
-    const s2m = new THREE.PointsMaterial({ color: 0x3b82f6, size: 0.055, transparent: true, opacity: 0.32, sizeAttenuation: true });
-    const blueCloud = new THREE.Points(s2g, s2m);
-    scene.add(blueCloud);
+    for (let i = 0; i < s2n; i++) { s2p[i*3]=rng(-34,34); s2p[i*3+1]=rng(-80,80); s2p[i*3+2]=rng(-14,0); }
+    const s2g = new THREE.BufferGeometry(); s2g.setAttribute("position", new THREE.BufferAttribute(s2p, 3));
+    const s2m = new THREE.PointsMaterial({ color: 0x3b82f6, size: 0.06, transparent: true, opacity: 0.3, sizeAttenuation: true });
+    const blueCloud = new THREE.Points(s2g, s2m); scene.add(blueCloud);
 
-    const s3n = isMobile ? 1000 : 2500;
+    // Cyan cloud
+    const s3n = isMobile ? 800 : 2200;
     const s3p = new Float32Array(s3n * 3);
-    for (let i = 0; i < s3n; i++) { s3p[i*3]=rng(-26,26); s3p[i*3+1]=rng(-70,70); s3p[i*3+2]=rng(-10,1); }
-    const s3g = new THREE.BufferGeometry();
-    s3g.setAttribute("position", new THREE.BufferAttribute(s3p, 3));
-    const s3m = new THREE.PointsMaterial({ color: 0x06b6d4, size: 0.042, transparent: true, opacity: 0.22, sizeAttenuation: true });
-    const cyanCloud = new THREE.Points(s3g, s3m);
-    scene.add(cyanCloud);
+    for (let i = 0; i < s3n; i++) { s3p[i*3]=rng(-28,28); s3p[i*3+1]=rng(-70,70); s3p[i*3+2]=rng(-10,1); }
+    const s3g = new THREE.BufferGeometry(); s3g.setAttribute("position", new THREE.BufferAttribute(s3p, 3));
+    const s3m = new THREE.PointsMaterial({ color: 0x06b6d4, size: 0.045, transparent: true, opacity: 0.2, sizeAttenuation: true });
+    const cyanCloud = new THREE.Points(s3g, s3m); scene.add(cyanCloud);
 
-    const s4n = isMobile ? 700 : 1800;
+    // Violet cloud
+    const s4n = isMobile ? 500 : 1500;
     const s4p = new Float32Array(s4n * 3);
-    for (let i = 0; i < s4n; i++) { s4p[i*3]=rng(-20,20); s4p[i*3+1]=rng(-65,65); s4p[i*3+2]=rng(-8,1); }
-    const s4g = new THREE.BufferGeometry();
-    s4g.setAttribute("position", new THREE.BufferAttribute(s4p, 3));
-    const s4m = new THREE.PointsMaterial({ color: 0x7c3aed, size: 0.05, transparent: true, opacity: 0.18, sizeAttenuation: true });
-    const violetCloud = new THREE.Points(s4g, s4m);
-    scene.add(violetCloud);
+    for (let i = 0; i < s4n; i++) { s4p[i*3]=rng(-22,22); s4p[i*3+1]=rng(-65,65); s4p[i*3+2]=rng(-8,1); }
+    const s4g = new THREE.BufferGeometry(); s4g.setAttribute("position", new THREE.BufferAttribute(s4p, 3));
+    const s4m = new THREE.PointsMaterial({ color: 0x7c3aed, size: 0.055, transparent: true, opacity: 0.17, sizeAttenuation: true });
+    const violetCloud = new THREE.Points(s4g, s4m); scene.add(violetCloud);
 
-    const nn = isMobile ? 50 : 100;
+    // Neural network nodes
+    const nn = isMobile ? 45 : 90;
     const npos = Array.from({ length: nn }, () => new THREE.Vector3(rng(-20,20), rng(-60,60), rng(-6,0)));
     const npArr = new Float32Array(nn * 3);
     npos.forEach((p, i) => { npArr[i*3]=p.x; npArr[i*3+1]=p.y; npArr[i*3+2]=p.z; });
-    const nGeo = new THREE.BufferGeometry();
-    nGeo.setAttribute("position", new THREE.BufferAttribute(npArr, 3));
-    const nMat = new THREE.PointsMaterial({ color: 0x60a5fa, size: 0.16, transparent: true, opacity: 0.65, sizeAttenuation: true });
+    const nGeo = new THREE.BufferGeometry(); nGeo.setAttribute("position", new THREE.BufferAttribute(npArr, 3));
+    const nMat = new THREE.PointsMaterial({ color: 0x60a5fa, size: 0.18, transparent: true, opacity: 0.7, sizeAttenuation: true });
     scene.add(new THREE.Points(nGeo, nMat));
     const edges = [];
     for (let i = 0; i < nn; i++) for (let j = i+1; j < nn; j++) {
-      if (npos[i].distanceTo(npos[j]) < 9) { edges.push(npos[i].x, npos[i].y, npos[i].z, npos[j].x, npos[j].y, npos[j].z); }
+      if (npos[i].distanceTo(npos[j]) < 8.5) { edges.push(npos[i].x, npos[i].y, npos[i].z, npos[j].x, npos[j].y, npos[j].z); }
     }
-    const eGeo = new THREE.BufferGeometry();
-    eGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(edges), 3));
-    scene.add(new THREE.LineSegments(eGeo, new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.1 })));
+    const eGeo = new THREE.BufferGeometry(); eGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(edges), 3));
+    scene.add(new THREE.LineSegments(eGeo, new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.09 })));
 
+    // Shooting stars
     const shooters = [];
-    const shootN = isMobile ? 10 : 22;
+    const shootN = isMobile ? 8 : 20;
     for (let i = 0; i < shootN; i++) {
-      const len = rng(1.8, 4.5);
+      const len = rng(2, 5);
       const sg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(-len,-len*0.28,0)]);
-      const sl = new THREE.Line(sg, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: rng(0.25,0.65) }));
+      const sl = new THREE.Line(sg, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: rng(0.2,0.6) }));
       sl.position.set(rng(-20,22), rng(10,55), rng(-5,0));
-      sl.userData = { spd: rng(0.07,0.2), resetY: rng(15,65) };
-      scene.add(sl);
-      shooters.push(sl);
+      sl.userData = { spd: rng(0.08,0.22), resetY: rng(15,65) };
+      scene.add(sl); shooters.push(sl);
     }
 
+    // DNA Helix
     const dna1=[], dna2=[], rungs=[];
-    const dnaN=150;
+    const dnaN=130;
     for (let i=0; i<dnaN; i++) {
-      const t=(i/dnaN)*Math.PI*12, y=(i/dnaN)*55-27, r=1.1;
-      dna1.push(new THREE.Vector3(Math.cos(t)*r+5.5, y, Math.sin(t)*r-3));
-      dna2.push(new THREE.Vector3(Math.cos(t+Math.PI)*r+5.5, y, Math.sin(t+Math.PI)*r-3));
-      if (i%9===0) { rungs.push(dna1[i], dna2[i]); }
+      const t=(i/dnaN)*Math.PI*10, y=(i/dnaN)*50-25, r=1.1;
+      dna1.push(new THREE.Vector3(Math.cos(t)*r+6, y, Math.sin(t)*r-3));
+      dna2.push(new THREE.Vector3(Math.cos(t+Math.PI)*r+6, y, Math.sin(t+Math.PI)*r-3));
+      if (i%8===0) { rungs.push(dna1[i], dna2[i]); }
     }
     const dnaGroup = new THREE.Group();
-    dnaGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(dna1), new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.45 })));
-    dnaGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(dna2), new THREE.LineBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.45 })));
-    dnaGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(rungs), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.09 })));
+    dnaGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(dna1), new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.4 })));
+    dnaGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(dna2), new THREE.LineBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.4 })));
+    dnaGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(rungs), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.08 })));
     scene.add(dnaGroup);
 
+    // Wireframe objects
     const wires = [
       { geo: new THREE.TorusKnotGeometry(1.7,0.4,160,32), col: 0x2563eb, op: 0.09, pos: [-6,7,-5] },
       { geo: new THREE.IcosahedronGeometry(1.3,1), col: 0x06b6d4, op: 0.08, pos: [5.5,-7,-3] },
       { geo: new THREE.OctahedronGeometry(1.4,1), col: 0x7c3aed, op: 0.07, pos: [-5,-16,-3] },
       { geo: new THREE.DodecahedronGeometry(1.2,0), col: 0x06b6d4, op: 0.07, pos: [6,16,-4] },
-      { geo: new THREE.TetrahedronGeometry(1.1,1), col: 0x3b82f6, op: 0.08, pos: [-7,-30,-3] },
-      { geo: new THREE.TorusGeometry(1.3,0.45,12,48), col: 0x2563eb, op: 0.07, pos: [4,28,-4] },
+      { geo: new THREE.TorusGeometry(1.3,0.45,12,48), col: 0x2563eb, op: 0.08, pos: [4,28,-4] },
     ];
     const wireMeshes = wires.map(({ geo, col, op, pos }) => {
       const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: op }));
       m.position.set(...pos); scene.add(m); return m;
     });
 
+    // Floating rings
     const rings = [];
-    [[4,9,-5,0x3b82f6],[-5,-9,-4,0x06b6d4],[7,-22,-5,0x7c3aed],[-4,22,-4,0x2563eb],[3,-38,-5,0x06b6d4],[-6,38,-5,0x7c3aed]].forEach(([x,y,z,col]) => {
+    [[4,9,-5,0x3b82f6],[-5,-9,-4,0x06b6d4],[7,-22,-5,0x7c3aed],[-4,22,-4,0x2563eb],[3,-38,-5,0x06b6d4]].forEach(([x,y,z,col]) => {
       const rg = new THREE.TorusGeometry(rng(0.7,1.2),0.035,8,44);
-      const rm = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: rng(0.14,0.28) });
-      const ring = new THREE.Mesh(rg, rm);
-      ring.position.set(x,y,z);
-      ring.userData = { baseY: y, spd: rng(0.25,0.65), ph: rng(0,Math.PI*2) };
+      const ring = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: rng(0.14,0.28) }));
+      ring.position.set(x,y,z); ring.userData = { baseY: y, spd: rng(0.25,0.65), ph: rng(0,Math.PI*2) };
       scene.add(ring); rings.push(ring);
-    });
-
-    const ribbons = [];
-    [[0x3b82f6,-8,0],[0x06b6d4,-18,1.4],[0x7c3aed,-28,2.8],[0x2563eb,8,0.7]].forEach(([col,yOff,ph]) => {
-      const pts = Array.from({ length: 90 }, (_,i) => new THREE.Vector3((i/89)*44-22, yOff, -9));
-      const rGeo = new THREE.BufferGeometry().setFromPoints(pts);
-      const rMat = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.05 });
-      const ribbon = new THREE.Line(rGeo, rMat);
-      ribbon.userData = { pts, yOff, ph }; scene.add(ribbon); ribbons.push(ribbon);
     });
 
     let mx=0, my=0;
     const onMM = (e) => { mx=(e.clientX/W()-0.5)*2; my=-(e.clientY/window.innerHeight-0.5)*2; };
-    const onScroll = () => { camera.position.y=-(window.scrollY/Math.max(1,document.body.scrollHeight-window.innerHeight))*38; };
+    const onScroll = () => { camera.position.y=-(window.scrollY/Math.max(1,document.body.scrollHeight-window.innerHeight))*40; };
     const onResize = () => { camera.aspect=W()/H(); camera.updateProjectionMatrix(); renderer.setSize(W(),H()); };
     window.addEventListener("mousemove", onMM);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -228,29 +259,21 @@ function ThreeBackground() {
       blueCloud.rotation.y=t*0.03+mx*0.05; blueCloud.rotation.x=t*0.012+my*0.025;
       cyanCloud.rotation.y=-t*0.022+mx*0.035;
       violetCloud.rotation.y=t*0.018; violetCloud.rotation.z=t*0.007;
-      s1m.opacity=0.40+Math.sin(t*2.2)*0.10; s2m.opacity=0.25+Math.sin(t*1.5)*0.07; s3m.opacity=0.16+Math.cos(t*1.8)*0.06;
-      const rotSpeeds=[[0.003,0.005,0],[0.004,0,0.003],[0.003,0.002,0],[0.002,0.004,0],[0.005,0,0.003],[0.002,0.003,0.002]];
-      const floatOffsets=[6,-6,-14,14,-28,26];
+      s1m.opacity=0.38+Math.sin(t*2.2)*0.1; s2m.opacity=0.22+Math.sin(t*1.5)*0.07;
+      const rs=[[0.003,0.005,0],[0.004,0,0.003],[0.003,0.002,0],[0.002,0.004,0],[0.002,0.003,0.002]];
+      const fo=[6,-6,-14,14,26];
       wireMeshes.forEach((m,i) => {
-        m.rotation.x+=rotSpeeds[i][0]; m.rotation.y+=rotSpeeds[i][1]; m.rotation.z+=rotSpeeds[i][2];
-        m.position.y=floatOffsets[i]+Math.sin(t*(0.4+i*0.07))*0.8;
+        m.rotation.x+=rs[i][0]; m.rotation.y+=rs[i][1]; m.rotation.z+=rs[i][2];
+        m.position.y=fo[i]+Math.sin(t*(0.4+i*0.07))*0.8;
       });
-      dnaGroup.rotation.y=t*0.18;
+      dnaGroup.rotation.y=t*0.16;
       rings.forEach((r) => {
         r.rotation.x+=0.009; r.rotation.y+=0.007;
         r.position.y=r.userData.baseY+Math.sin(t*r.userData.spd+r.userData.ph)*1.4;
-        r.material.opacity=0.10+Math.abs(Math.sin(t*r.userData.spd+r.userData.ph))*0.18;
       });
       shooters.forEach((s) => {
         s.position.x-=s.userData.spd; s.position.y-=s.userData.spd*0.38;
         if (s.position.x<-28||s.position.y<-65) { s.position.set(rng(14,26), s.userData.resetY, rng(-5,0)); }
-      });
-      ribbons.forEach((rib) => {
-        rib.userData.pts.forEach((p,i) => {
-          p.y=rib.userData.yOff+Math.sin(i*0.17+t*0.75+rib.userData.ph)*1.6+Math.cos(i*0.08+t*0.45)*0.9;
-        });
-        rib.geometry.setFromPoints(rib.userData.pts);
-        rib.material.opacity=0.03+Math.abs(Math.sin(t*0.55+rib.userData.ph))*0.07;
       });
       renderer.render(scene, camera);
     };
@@ -266,16 +289,27 @@ function ThreeBackground() {
   }, []);
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }}>
-      <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
+    <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+      <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
     </div>
   );
 }
 
-/* ─── SECTION ────────────────────────────────────────────── */
+/* ─── GLOW ORBS (CSS) ─────────────────────────────────────── */
+function GlowOrbs() {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "60vw", height: "60vw", borderRadius: "50%", background: `radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 65%)`, animation: "orbFloat1 18s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", top: "30%", right: "-15%", width: "50vw", height: "50vw", borderRadius: "50%", background: `radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 65%)`, animation: "orbFloat2 22s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", bottom: "10%", left: "30%", width: "40vw", height: "40vw", borderRadius: "50%", background: `radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 65%)`, animation: "orbFloat3 15s ease-in-out infinite" }} />
+    </div>
+  );
+}
+
+/* ─── SECTION WRAPPER ─────────────────────────────────────── */
 function Section({ id, children, style }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
     <section id={id} ref={ref} style={{ position: "relative", zIndex: 1, ...style }}>
       <motion.div initial="hidden" animate={inView ? "visible" : "hidden"}>{children}</motion.div>
@@ -283,18 +317,19 @@ function Section({ id, children, style }) {
   );
 }
 
+/* ─── GLOW DIVIDER ────────────────────────────────────────── */
 function GlowDivider() {
   return (
-    <div style={{ position: "relative", height: 1, zIndex: 1 }}>
-      <div style={{ position: "absolute", left: "8%", right: "8%", height: 1, background: `linear-gradient(90deg, transparent, ${c.blue}55, ${c.cyan}55, ${c.violet}44, transparent)` }} />
-      <div style={{ position: "absolute", left: "20%", right: "20%", height: 10, top: -5, background: `radial-gradient(ellipse, ${c.blue}25, transparent 70%)`, filter: "blur(5px)" }} />
+    <div style={{ position: "relative", height: 1, zIndex: 1, margin: "0 auto", maxWidth: 1200, padding: "0 clamp(16px,4vw,24px)" }}>
+      <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${c.blue}70, ${c.cyan}70, ${c.violet}55, transparent)` }} />
+      <div style={{ position: "absolute", left: "25%", right: "25%", height: 14, top: -7, background: `radial-gradient(ellipse, ${c.blue}30, transparent 70%)`, filter: "blur(6px)" }} />
     </div>
   );
 }
 
 function useScrollTo(setOpen) {
   return (id) => {
-    setOpen(false);
+    setOpen && setOpen(false);
     setTimeout(() => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -304,7 +339,7 @@ function useScrollTo(setOpen) {
   };
 }
 
-/* ─── NAVBAR ─────────────────────────────────────────────── */
+/* ─── NAVBAR ──────────────────────────────────────────────── */
 function Navbar({ active }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -316,7 +351,7 @@ function Navbar({ active }) {
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const desktopScrollTo = (id) => {
+  const navScrollTo = (id) => {
     const el = document.getElementById(id);
     if (!el) return;
     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 70, behavior: "smooth" });
@@ -325,52 +360,112 @@ function Navbar({ active }) {
   const links = ["home", "skills", "experience", "projects", "contact"];
 
   return (
-    <motion.nav initial={{ y: -60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? "rgba(2,8,16,0.92)" : "transparent", backdropFilter: scrolled ? "blur(28px)" : "none", borderBottom: scrolled ? `1px solid rgba(59,130,246,0.15)` : "1px solid transparent", transition: "all 0.4s ease" }}>
+    <motion.nav
+      initial={{ y: -80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+      style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: scrolled ? "rgba(3,9,18,0.85)" : "transparent",
+        backdropFilter: scrolled ? "blur(32px) saturate(180%)" : "none",
+        borderBottom: scrolled ? `1px solid rgba(59,130,246,0.12)` : "1px solid transparent",
+        transition: "all 0.5s ease"
+      }}>
+      {scrolled && <div style={{ position: "absolute", bottom: 0, left: "10%", right: "10%", height: 1, background: `linear-gradient(90deg, transparent, ${c.blue}40, transparent)` }} />}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 clamp(16px,4vw,24px)", display: "flex", alignItems: "center", justifyContent: "space-between", height: 70 }}>
-        <motion.div whileHover={{ scale: 1.05 }} onClick={() => desktopScrollTo("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
+        <motion.div whileHover={{ scale: 1.04 }} onClick={() => navScrollTo("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 11 }}>
           <div style={{ position: "relative" }}>
-            <div style={{ width: 38, height: 38, borderRadius: 11, background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 14, color: "#fff", fontFamily: "monospace", boxShadow: `0 0 22px ${c.blue}55` }}>SA</div>
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
-              style={{ position: "absolute", inset: -4, borderRadius: "50%", border: `1px dashed ${c.blue}50`, pointerEvents: "none" }} />
+            <div style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 900, fontSize: 14, color: "#fff", fontFamily: "monospace",
+              boxShadow: `0 0 24px ${c.blue}60`
+            }}>SA</div>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              style={{ position: "absolute", inset: -5, borderRadius: "50%", border: `1px dashed ${c.blue}45`, pointerEvents: "none" }}
+            />
           </div>
-          <span style={{ color: c.text, fontWeight: 700, fontSize: 17, letterSpacing: "-0.3px" }}>Shaikh Anis</span>
+          <div>
+            <div style={{ color: c.text, fontWeight: 800, fontSize: 16, letterSpacing: "-0.3px", fontFamily: "'Syne', sans-serif", lineHeight: 1.1 }}>Shaikh Anis</div>
+            <div style={{ color: c.textDim, fontSize: 11, letterSpacing: "0.06em", fontWeight: 500, textTransform: "uppercase" }}>Full Stack · AI</div>
+          </div>
         </motion.div>
 
-        <div style={{ display: "flex", gap: 2, alignItems: "center" }} className="nav-desktop">
+        {/* Desktop nav */}
+        <div className="nav-desktop" style={{ display: "flex", gap: 2, alignItems: "center" }}>
           {links.map((s) => (
-            <motion.button key={s} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} onClick={() => desktopScrollTo(s)}
-              style={{ background: active===s ? `${c.blue}18` : "none", border: active===s ? `1px solid ${c.blue}40` : "1px solid transparent", cursor: "pointer", padding: "7px 15px", borderRadius: 8, color: active===s ? c.blueBright : c.textMuted, fontWeight: active===s ? 600 : 400, fontSize: 14, transition: "all 0.2s", fontFamily: "inherit" }}>
+            <motion.button key={s} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} onClick={() => navScrollTo(s)}
+              style={{
+                background: active===s ? `${c.blue}18` : "none",
+                border: active===s ? `1px solid ${c.blue}40` : "1px solid transparent",
+                cursor: "pointer", padding: "7px 16px", borderRadius: 9,
+                color: active===s ? c.blueBright : c.textMuted,
+                fontWeight: active===s ? 700 : 400, fontSize: 14,
+                transition: "all 0.25s", fontFamily: "inherit",
+              }}>
               {s.charAt(0).toUpperCase() + s.slice(1)}
             </motion.button>
           ))}
-          <motion.a href="mailto:shaikhaniscoder07@gmail.com" whileHover={{ scale: 1.05, boxShadow: `0 0 28px ${c.blue}66` }} whileTap={{ scale: 0.97 }}
-            style={{ marginLeft: 10, padding: "9px 22px", borderRadius: 10, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 600, fontSize: 14, textDecoration: "none", display: "flex", alignItems: "center", gap: 7, boxShadow: `0 0 16px ${c.blue}33` }}>
+          <motion.a
+            href="mailto:shaikhaniscoder07@gmail.com"
+            whileHover={{ scale: 1.05, boxShadow: `0 0 32px ${c.blue}80` }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              marginLeft: 12, padding: "9px 24px", borderRadius: 11,
+              background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`,
+              color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none",
+              display: "flex", alignItems: "center", gap: 7,
+              boxShadow: `0 0 18px ${c.blue}40`,
+            }}>
             <Sparkles size={13} /> Hire Me
           </motion.a>
         </div>
 
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setOpen(!open)} className="nav-mobile-btn"
-          style={{ background: "none", border: `1px solid ${c.border}`, color: c.text, borderRadius: 8, padding: 8, cursor: "pointer", display: "none" }}>
-          {open ? <X size={18} /> : <Menu size={18} />}
+        {/* Mobile menu btn */}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setOpen(!open)}
+          className="nav-mobile-btn"
+          style={{ background: open ? `${c.blue}18` : "none", border: `1px solid ${c.border}`, color: c.text, borderRadius: 9, padding: "8px 10px", cursor: "pointer", display: "none", alignItems: "center", justifyContent: "center" }}>
+          <AnimatePresence mode="wait">
+            {open ? <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><X size={18} /></motion.span>
+                  : <motion.span key="m" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Menu size={18} /></motion.span>}
+          </AnimatePresence>
         </motion.button>
       </div>
 
+      {/* Mobile menu */}
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }}
-            style={{ background: "rgba(2,8,16,0.98)", backdropFilter: "blur(24px)", borderTop: `1px solid ${c.border}`, overflow: "hidden" }}>
-            <div style={{ padding: "16px 24px 24px" }}>
-              {links.map((s) => (
-                <motion.button key={s} whileTap={{ scale: 0.97 }} onClick={() => scrollTo(s)}
-                  style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: active===s ? `${c.blue}14` : "none", border: "none", borderBottom: `1px solid ${c.border}`, color: active===s ? c.blueBright : c.textMuted, padding: "16px 12px", fontSize: 16, fontWeight: active===s ? 700 : 400, cursor: "pointer", fontFamily: "inherit", borderRadius: active===s ? 10 : 0, transition: "all 0.2s" }}>
-                  {active===s && <motion.span layoutId="mobileActiveDot" style={{ width: 6, height: 6, borderRadius: "50%", background: c.blueBright, display: "block", flexShrink: 0 }} />}
+          <motion.div
+            initial={{ opacity: 0, height: 0, y: -10 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -10 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            style={{ background: "rgba(3,9,18,0.98)", backdropFilter: "blur(28px)", borderTop: `1px solid ${c.border}`, overflow: "hidden" }}>
+            <div style={{ padding: "12px 20px 24px" }}>
+              {links.map((s, i) => (
+                <motion.button key={s}
+                  initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  onClick={() => scrollTo(s)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 14, width: "100%",
+                    textAlign: "left", background: active===s ? `${c.blue}14` : "none",
+                    border: "none", borderBottom: `1px solid ${c.border}`,
+                    color: active===s ? c.blueBright : c.textMuted,
+                    padding: "15px 12px", fontSize: 15, fontWeight: active===s ? 700 : 400,
+                    cursor: "pointer", fontFamily: "inherit", borderRadius: active===s ? 10 : 0,
+                  }}>
+                  {active===s && <motion.span layoutId="mDot" style={{ width: 6, height: 6, borderRadius: "50%", background: c.blueBright, display: "block", flexShrink: 0 }} />}
                   <span>{s.charAt(0).toUpperCase() + s.slice(1)}</span>
                   <ChevronRight size={14} style={{ marginLeft: "auto", opacity: 0.4 }} />
                 </motion.button>
               ))}
               <motion.a href="mailto:shaikhaniscoder07@gmail.com"
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 20, padding: "15px", borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: 15, textDecoration: "none" }}>
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 18, padding: 16, borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: 15, textDecoration: "none", boxShadow: `0 0 24px ${c.blue}44` }}>
                 <Sparkles size={15} /> Hire Me
               </motion.a>
             </div>
@@ -381,16 +476,26 @@ function Navbar({ active }) {
   );
 }
 
-/* ─── TICKER ─────────────────────────────────────────────── */
+/* ─── TICKER ──────────────────────────────────────────────── */
 function Ticker() {
   return (
-    <div style={{ overflow: "hidden", borderTop: `1px solid rgba(59,130,246,0.14)`, borderBottom: `1px solid rgba(59,130,246,0.14)`, background: "rgba(37,99,235,0.04)", padding: "14px 0" }}>
-      <motion.div animate={{ x: ["0%", "-50%"] }} transition={{ duration: 34, repeat: Infinity, ease: "linear" }}
+    <div style={{
+      overflow: "hidden",
+      borderTop: `1px solid rgba(59,130,246,0.12)`,
+      borderBottom: `1px solid rgba(59,130,246,0.12)`,
+      background: "rgba(37,99,235,0.03)",
+      padding: "13px 0", position: "relative"
+    }}>
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: `linear-gradient(90deg, ${c.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 80, background: `linear-gradient(270deg, ${c.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />
+      <motion.div
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ duration: 36, repeat: Infinity, ease: "linear" }}
         style={{ display: "flex", whiteSpace: "nowrap", width: "max-content" }}>
         {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 12, paddingRight: 32, color: c.textMuted, fontSize: 12, fontWeight: 500, letterSpacing: "0.06em" }}>
-            <motion.span animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity, delay: i*0.08 }}>
-              <Zap size={10} color={c.blueBright} />
+          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 12, paddingRight: 36, color: c.textMuted, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em" }}>
+            <motion.span animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.2, 1] }} transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.09 }}>
+              <Zap size={9} color={i % 2 === 0 ? c.blueBright : c.cyan} />
             </motion.span>
             {item.toUpperCase()}
           </span>
@@ -400,117 +505,208 @@ function Ticker() {
   );
 }
 
-/* ─── HERO ───────────────────────────────────────────────── */
+/* ─── HERO ────────────────────────────────────────────────── */
 function Hero() {
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 400], [0, 70]);
-  const opacity = useTransform(scrollY, [0, 320], [1, 0]);
+  const y = useTransform(scrollY, [0, 500], [0, 90]);
+  const opacity = useTransform(scrollY, [0, 350], [1, 0]);
+  const [typed, setTyped] = useState("");
+  const roles = ["Full Stack Developer", "Agentic AI Engineer", "LangChain Expert", "RAG Architect"];
+  const roleRef = useRef(0);
+  const charRef = useRef(0);
+  const deletingRef = useRef(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const current = roles[roleRef.current];
+      if (!deletingRef.current) {
+        if (charRef.current < current.length) {
+          setTyped(current.slice(0, ++charRef.current));
+        } else {
+          setTimeout(() => { deletingRef.current = true; }, 1800);
+        }
+      } else {
+        if (charRef.current > 0) {
+          setTyped(current.slice(0, --charRef.current));
+        } else {
+          deletingRef.current = false;
+          roleRef.current = (roleRef.current + 1) % roles.length;
+        }
+      }
+    }, 55);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <section id="home" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "visible" }}>
+      {/* Gradient overlays */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: "-30%", left: "-15%", width: "min(800px,140vw)", height: "min(800px,140vw)", borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}16 0%, transparent 62%)` }} />
-        <div style={{ position: "absolute", top: "5%", right: "-20%", width: "min(600px,100vw)", height: "min(600px,100vw)", borderRadius: "50%", background: `radial-gradient(circle, ${c.cyan}10 0%, transparent 62%)` }} />
-        <div style={{ position: "absolute", bottom: "-8%", left: "30%", width: "min(400px,70vw)", height: "min(400px,70vw)", borderRadius: "50%", background: `radial-gradient(circle, ${c.violet}10 0%, transparent 62%)` }} />
-        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.032 }}>
-          <defs><pattern id="grid" width="54" height="54" patternUnits="userSpaceOnUse"><path d="M 54 0 L 0 0 0 54" fill="none" stroke={c.blueBright} strokeWidth="0.55"/></pattern></defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+        <div style={{ position: "absolute", top: "-25%", left: "-10%", width: "min(900px,140vw)", height: "min(900px,140vw)", borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}14 0%, transparent 60%)` }} />
+        <div style={{ position: "absolute", top: "10%", right: "-18%", width: "min(700px,100vw)", height: "min(700px,100vw)", borderRadius: "50%", background: `radial-gradient(circle, ${c.cyan}09 0%, transparent 60%)` }} />
+        <div style={{ position: "absolute", bottom: "-5%", left: "35%", width: "min(500px,70vw)", height: "min(500px,70vw)", borderRadius: "50%", background: `radial-gradient(circle, ${c.violet}09 0%, transparent 60%)` }} />
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.025 }}>
+          <defs><pattern id="g" width="58" height="58" patternUnits="userSpaceOnUse"><path d="M 58 0 L 0 0 0 58" fill="none" stroke={c.blueBright} strokeWidth="0.5"/></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#g)" />
         </svg>
       </div>
 
       <motion.div style={{ y, opacity, flex: 1, display: "flex", alignItems: "center", position: "relative", zIndex: 1 }}>
-        <div className="hero-grid" style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(100px,15vw,140px) clamp(16px,4vw,24px) clamp(40px,6vw,60px)", width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(32px,5vw,60px)", alignItems: "center" }}>
+        <div className="hero-grid" style={{
+          maxWidth: 1200, margin: "0 auto",
+          padding: "clamp(100px,14vw,140px) clamp(16px,4vw,24px) clamp(40px,6vw,60px)",
+          width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr",
+          gap: "clamp(32px,5vw,60px)", alignItems: "center"
+        }}>
+          {/* LEFT */}
           <div>
-            <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="avail-mobile"
-              style={{ display: "none", alignItems: "center", gap: 8, background: `${c.blue}15`, border: `1px solid ${c.blue}40`, borderRadius: 100, padding: "6px 14px", marginBottom: 24 }}>
-              <motion.span animate={{ opacity: [1,0.3,1] }} transition={{ duration: 1.8, repeat: Infinity }}
-                style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 10px #22c55e", display: "block" }} />
-              <span style={{ color: c.blueBright, fontSize: 13, fontWeight: 500 }}>Available for opportunities</span>
+            {/* Mobile availability badge */}
+            <motion.div className="avail-mobile" custom={0} variants={fadeUp} initial="hidden" animate="visible"
+              style={{ display: "none", alignItems: "center", gap: 8, background: `rgba(34,197,94,0.08)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: 100, padding: "7px 16px", marginBottom: 22, width: "fit-content" }}>
+              <motion.span animate={{ opacity: [1,0.3,1], scale: [1,1.3,1] }} transition={{ duration: 2, repeat: Infinity }}
+                style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 12px #22c55e", display: "block" }} />
+              <span style={{ color: "#22c55e", fontSize: 12, fontWeight: 600 }}>Available for opportunities</span>
             </motion.div>
 
+            {/* Badge */}
             <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${c.blue}12`, border: `1px solid ${c.blue}35`, borderRadius: 100, padding: "7px 18px", marginBottom: 28 }}>
-              <motion.span animate={{ rotate: 360 }} transition={{ duration: 6, repeat: Infinity, ease: "linear" }}><Cpu size={13} color={c.cyan} /></motion.span>
+              style={{ display: "inline-flex", alignItems: "center", gap: 9, background: `${c.blue}14`, border: `1px solid ${c.blue}35`, borderRadius: 100, padding: "8px 20px", marginBottom: 28 }}>
+              <motion.span animate={{ rotate: 360 }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }}><Cpu size={13} color={c.cyan} /></motion.span>
               <span style={{ color: c.textMuted, fontSize: 13, fontWeight: 500 }}>Full Stack & Agentic AI Developer</span>
             </motion.div>
 
+            {/* Name */}
             <motion.h1 custom={1} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ fontSize: "clamp(44px,8.5vw,84px)", fontWeight: 900, lineHeight: 1.0, letterSpacing: "-3px", color: c.text, marginBottom: 22, fontFamily: "'Syne', sans-serif" }}>
+              style={{ fontSize: "clamp(46px,9vw,88px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-3px", color: c.text, marginBottom: 20, fontFamily: "'Syne', sans-serif" }}>
               Shaikh<br />
-              <span style={{ background: `linear-gradient(135deg, ${c.blueBright} 0%, ${c.cyan} 50%, ${c.violet} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Anis.</span>
+              <span style={{ background: `linear-gradient(135deg, ${c.blueBright} 0%, ${c.cyan} 45%, ${c.violet} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Anis.</span>
             </motion.h1>
 
-            <motion.p custom={2} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ fontSize: "clamp(14px,2vw,16px)", color: c.textDim, lineHeight: 1.78, marginBottom: 40, maxWidth: 500 }}>
-              Building scalable applications and intelligent AI systems using React, FastAPI, LangChain & RAG pipelines. Based in Coimbatore, India.
+            {/* Typewriter */}
+            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible"
+              style={{ fontSize: "clamp(15px,2.5vw,19px)", fontWeight: 700, color: c.cyan, marginBottom: 20, height: 28, fontFamily: "'Syne', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
+              {typed}
+              <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 0.9, repeat: Infinity }} style={{ display: "inline-block", width: 2, height: "1em", background: c.cyan, borderRadius: 1 }} />
+            </motion.div>
+
+            <motion.p custom={3} variants={fadeUp} initial="hidden" animate="visible"
+              style={{ fontSize: "clamp(13px,1.8vw,15px)", color: c.textDim, lineHeight: 1.85, marginBottom: 36, maxWidth: 480 }}>
+              Building scalable applications and intelligent AI systems using React, FastAPI, LangChain & RAG pipelines.
             </motion.p>
 
+            {/* Location */}
             <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", gap: "clamp(18px,4vw,38px)", marginBottom: 42, flexWrap: "wrap" }}>
-              {[["400+", "DSA Problems", c.blueBright], ["4+", "AI Projects", c.cyan], ["8.6", "CGPA", c.violet]].map(([num, label, col]) => (
-                <div key={label}>
-                  <div style={{ fontSize: "clamp(24px,4vw,34px)", fontWeight: 900, letterSpacing: "-1.5px", color: col, textShadow: `0 0 24px ${col}50` }}>{num}</div>
-                  <div style={{ fontSize: 11, color: c.textDim, marginTop: 3, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.09em" }}>{label}</div>
-                </div>
+              style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 36 }}>
+              <MapPin size={14} color={c.textDim} />
+              <span style={{ color: c.textDim, fontSize: 13 }}>Coimbatore, India</span>
+              <span style={{ color: c.textDim, fontSize: 13, marginLeft: 4 }}>·</span>
+              <Calendar size={14} color={c.textDim} style={{ marginLeft: 4 }} />
+              <span style={{ color: c.textDim, fontSize: 13 }}>B.E. CSE · 2026</span>
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible"
+              style={{ display: "flex", gap: "clamp(20px,4vw,44px)", marginBottom: 40, flexWrap: "wrap" }}>
+              {[["400+", "DSA Problems", c.blueBright], ["4+", "AI Projects", c.cyan], ["8.6", "CGPA", c.violet]].map(([num, label, col], i) => (
+                <motion.div key={label} whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}>
+                  <div style={{ fontSize: "clamp(26px,4.5vw,38px)", fontWeight: 900, letterSpacing: "-1.5px", color: col, textShadow: `0 0 28px ${col}60`, fontFamily: "'Syne', sans-serif" }}>{num}</div>
+                  <div style={{ fontSize: 11, color: c.textDim, marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div>
+                </motion.div>
               ))}
             </motion.div>
 
-            <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <motion.a href="mailto:shaikhaniscoder07@gmail.com" whileHover={{ scale: 1.04, boxShadow: `0 0 40px ${c.blue}66` }} whileTap={{ scale: 0.97 }}
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "clamp(12px,2vw,14px) clamp(24px,3vw,32px)", borderRadius: 13, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: "clamp(13px,2vw,15px)", textDecoration: "none", boxShadow: `0 0 22px ${c.blue}44` }}>
+            {/* CTA */}
+            <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible"
+              style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <motion.a href="mailto:shaikhaniscoder07@gmail.com"
+                whileHover={{ scale: 1.04, boxShadow: `0 0 50px ${c.blue}80` }}
+                whileTap={{ scale: 0.97 }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "clamp(13px,2vw,15px) clamp(26px,3vw,36px)", borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: "clamp(13px,1.8vw,15px)", textDecoration: "none", boxShadow: `0 0 26px ${c.blue}50` }}>
                 <Mail size={15} /> Contact Me
               </motion.a>
-              <motion.a href="https://github.com/shaikhanis" target="_blank" rel="noreferrer" whileHover={{ scale: 1.04, borderColor: c.blue }} whileTap={{ scale: 0.97 }}
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "clamp(12px,2vw,14px) clamp(24px,3vw,32px)", borderRadius: 13, background: "transparent", border: `1px solid ${c.border}`, color: c.text, fontWeight: 700, fontSize: "clamp(13px,2vw,15px)", textDecoration: "none", transition: "border-color 0.25s" }}>
+              <motion.a href="https://github.com/shaikhanis" target="_blank" rel="noreferrer"
+                whileHover={{ scale: 1.04, borderColor: `${c.blue}80` }}
+                whileTap={{ scale: 0.97 }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "clamp(13px,2vw,15px) clamp(26px,3vw,36px)", borderRadius: 14, background: "transparent", border: `1px solid ${c.border}`, color: c.text, fontWeight: 700, fontSize: "clamp(13px,1.8vw,15px)", textDecoration: "none", transition: "border-color 0.25s" }}>
                 <GitBranch size={15} /> GitHub
               </motion.a>
             </motion.div>
           </div>
 
+          {/* RIGHT: Profile card */}
           <motion.div className="hero-card" custom={3} variants={scaleIn} initial="hidden" animate="visible"
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 30 }}>
-            <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-              style={{ position: "relative", padding: "28px 118px 28px" }}>
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-                style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "clamp(290px,34vw,370px)", height: "clamp(290px,34vw,370px)", borderRadius: "50%", border: `1px dashed rgba(59,130,246,0.22)`, pointerEvents: "none" }} />
-              <motion.div animate={{ rotate: -360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "clamp(248px,30vw,318px)", height: "clamp(248px,30vw,318px)", borderRadius: "50%", border: `1px solid rgba(6,182,212,0.14)`, pointerEvents: "none" }} />
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
-                style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "clamp(200px,24vw,255px)", height: "clamp(200px,24vw,255px)", borderRadius: "50%", border: `1px dashed rgba(124,58,237,0.14)`, pointerEvents: "none" }} />
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 28 }}>
+            <motion.div animate={{ y: [-12, 10, -12] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              style={{ position: "relative", padding: "36px 130px 36px" }}>
+              {/* Orbit rings */}
+              {[380, 320, 265].map((size, i) => (
+                <motion.div key={size}
+                  animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
+                  transition={{ duration: [28, 20, 14][i], repeat: Infinity, ease: "linear" }}
+                  style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: size, height: size, borderRadius: "50%", border: `1px ${i === 1 ? "solid" : "dashed"} rgba(${i===0?'59,130,246':i===1?'6,182,212':'124,58,237'},0.18)`, pointerEvents: "none" }} />
+              ))}
 
-              <div style={{ width: "clamp(228px,27vw,292px)", borderRadius: 28, background: "transparent", border: `1px solid rgba(59,130,246,0.25)`, boxShadow: `0 0 120px ${c.blue}28, 0 50px 90px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)`, padding: "clamp(24px,3vw,34px)", textAlign: "center", position: "relative" }}>
-                <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-                  style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", border: `1px dashed ${c.blue}44`, pointerEvents: "none" }} />
-                <div style={{ position: "relative", width: 90, height: 90, margin: "0 auto 20px" }}>
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                    style={{ position: "absolute", inset: -6, borderRadius: "50%", background: `conic-gradient(${c.blue}, ${c.cyan}, ${c.violet}, ${c.blue})`, opacity: 0.5 }} />
-                  <div style={{ position: "relative", width: 90, height: 90, borderRadius: "50%", background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 900, color: "#fff", boxShadow: `0 0 44px ${c.blue}66`, fontFamily: "monospace", zIndex: 1 }}>SA</div>
+              {/* Card */}
+              <div style={{
+                width: "clamp(240px,28vw,300px)", borderRadius: 30,
+                background: c.glass, backdropFilter: "blur(24px)",
+                border: `1px solid rgba(59,130,246,0.22)`,
+                boxShadow: `0 0 140px ${c.blue}22, 0 60px 100px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)`,
+                padding: "clamp(26px,3vw,38px)", textAlign: "center", position: "relative", overflow: "hidden"
+              }}>
+                {/* Card bg shimmer */}
+                <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+                  style={{ position: "absolute", top: 0, left: 0, width: "50%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)", pointerEvents: "none" }} />
+
+                {/* Avatar */}
+                <div style={{ position: "relative", width: 92, height: 92, margin: "0 auto 22px" }}>
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                    style={{ position: "absolute", inset: -6, borderRadius: "50%", background: `conic-gradient(${c.blue}, ${c.cyan}, ${c.violet}, ${c.blue})`, opacity: 0.7 }} />
+                  <div style={{ position: "relative", width: 92, height: 92, borderRadius: "50%", background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, fontWeight: 900, color: "#fff", boxShadow: `0 0 50px ${c.blue}70`, fontFamily: "monospace", zIndex: 1 }}>SA</div>
                 </div>
-                <p style={{ color: c.text, fontWeight: 800, fontSize: 19, marginBottom: 4, fontFamily: "'Syne', sans-serif" }}>Shaikh Anis</p>
+
+                <p style={{ color: c.text, fontWeight: 800, fontSize: 20, marginBottom: 4, fontFamily: "'Syne', sans-serif" }}>Shaikh Anis</p>
                 <p style={{ color: c.textDim, fontSize: 13, marginBottom: 6 }}>B.E. CSE · SKCT · 2026</p>
-                <p style={{ color: c.textDim, fontSize: 12, marginBottom: 22 }}>Coimbatore, India</p>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: `${c.blue}20`, border: `1px solid ${c.blue}45`, borderRadius: 100, padding: "7px 16px" }}>
-                  <Award size={13} color={c.blueBright} />
+                <p style={{ color: c.textDim, fontSize: 12, marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+                  <MapPin size={11} /> Coimbatore, India
+                </p>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: `${c.blue}22`, border: `1px solid ${c.blue}45`, borderRadius: 100, padding: "8px 18px" }}>
+                  <Award size={14} color={c.blueBright} />
                   <span style={{ color: c.blueBright, fontSize: 12, fontWeight: 700 }}>NPTEL Topper</span>
                 </div>
+
+                {/* Floating tags */}
                 {[
-                  { label: "⚡ FastAPI",   left: -114, top: 24  },
-                  { label: "🤖 AI Agents", right: -122, top: 48  },
-                  { label: "⚛️ React",     left: -100,  bottom: 48 },
-                  { label: "🎙️ Whisper",   right: -112, bottom: 26 },
+                  { label: "⚡ FastAPI", left: -118, top: 20 },
+                  { label: "🤖 AI Agents", right: -126, top: 44 },
+                  { label: "⚛️ React", left: -104, bottom: 44 },
+                  { label: "🎙️ Whisper", right: -116, bottom: 22 },
                 ].map(({ label, left, right, top, bottom }, i) => (
-                  <motion.div key={label} animate={{ y: [0,-9,0] }} transition={{ duration: 3.2+i*0.6, repeat: Infinity, delay: i*0.5 }}
-                    style={{ position: "absolute", ...(left!==undefined?{left}:{right}), ...(top!==undefined?{top}:{bottom}), background: "rgba(5,12,24,0.92)", border: `1px solid rgba(59,130,246,0.3)`, borderRadius: 100, padding: "7px 14px", fontSize: 11, color: c.textMuted, fontWeight: 600, whiteSpace: "nowrap", boxShadow: `0 6px 26px rgba(0,0,0,0.55), 0 0 16px ${c.blue}22`, backdropFilter: "blur(14px)" }}>
+                  <motion.div key={label}
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 3.4 + i * 0.65, repeat: Infinity, delay: i * 0.55 }}
+                    style={{
+                      position: "absolute",
+                      ...(left !== undefined ? { left } : { right }),
+                      ...(top !== undefined ? { top } : { bottom }),
+                      background: "rgba(3,9,18,0.92)", backdropFilter: "blur(16px)",
+                      border: `1px solid rgba(59,130,246,0.28)`,
+                      borderRadius: 100, padding: "7px 15px", fontSize: 11,
+                      color: c.textMuted, fontWeight: 600, whiteSpace: "nowrap",
+                      boxShadow: `0 8px 28px rgba(0,0,0,0.5), 0 0 18px ${c.blue}20`,
+                    }}>
                     {label}
                   </motion.div>
                 ))}
               </div>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1, duration: 0.7 }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(34,197,94,0.07)", border: `1px solid rgba(34,197,94,0.25)`, borderRadius: 100, padding: "10px 22px" }}>
-              <motion.span animate={{ opacity: [1,0.3,1], scale: [1,1.25,1] }} transition={{ duration: 2, repeat: Infinity }}
-                style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 14px #22c55e", display: "block", flexShrink: 0 }} />
+            {/* Available badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2, duration: 0.7 }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(34,197,94,0.07)", border: `1px solid rgba(34,197,94,0.25)`, borderRadius: 100, padding: "11px 24px" }}>
+              <motion.span animate={{ opacity: [1,0.2,1], scale: [1,1.3,1] }} transition={{ duration: 2, repeat: Infinity }}
+                style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 16px #22c55e", display: "block", flexShrink: 0 }} />
               <span style={{ color: "#22c55e", fontSize: 13, fontWeight: 700 }}>Available for opportunities</span>
             </motion.div>
           </motion.div>
@@ -521,36 +717,43 @@ function Hero() {
   );
 }
 
-/* ─── SKILLS ─────────────────────────────────────────────── */
+/* ─── SKILLS ──────────────────────────────────────────────── */
 function Skills() {
   return (
     <Section id="skills" style={{ padding: "clamp(80px,10vw,120px) 0" }}>
       <GlowDivider />
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(44px,6vw,84px) clamp(16px,4vw,24px) 0" }}>
-        <motion.div variants={fadeUp} custom={0} style={{ textAlign: "center", marginBottom: "clamp(50px,7vw,76px)" }}>
-          <p style={{ color: c.cyan, fontSize: 12, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 14 }}>What I Work With</p>
-          <h2 style={{ fontSize: "clamp(30px,5.5vw,60px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(50px,6vw,90px) clamp(16px,4vw,24px) 0" }}>
+        <motion.div variants={fadeUp} custom={0} style={{ textAlign: "center", marginBottom: "clamp(50px,7vw,80px)" }}>
+          <motion.p style={{ color: c.cyan, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 14 }}>What I Work With</motion.p>
+          <h2 style={{ fontSize: "clamp(30px,5.5vw,62px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>
             Technical{" "}
             <span style={{ background: `linear-gradient(135deg, ${c.blueBright}, ${c.cyan})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Arsenal</span>
           </h2>
         </motion.div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,280px), 1fr))", gap: "clamp(14px,2vw,22px)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,270px), 1fr))", gap: "clamp(14px,2vw,20px)" }}>
           {SKILLS.map((group, i) => (
             <motion.div key={group.category} custom={i} variants={fadeUp}
-              whileHover={{ y: -7, borderColor: `${c.blue}80`, boxShadow: `0 0 44px ${c.blue}20, 0 22px 44px rgba(0,0,0,0.28)` }}
-              style={{ background: "transparent", border: `1px solid rgba(59,130,246,0.15)`, borderRadius: 18, padding: "clamp(18px,3vw,28px)", transition: "all 0.35s ease", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: -28, right: -28, width: 90, height: 90, borderRadius: "50%", background: `${c.blue}07`, pointerEvents: "none" }} />
+              whileHover={{ y: -8, borderColor: `${group.accent}70` }}
+              style={{
+                background: c.glass, backdropFilter: "blur(16px)",
+                border: `1px solid rgba(59,130,246,0.13)`,
+                borderRadius: 20, padding: "clamp(18px,3vw,26px)",
+                transition: "all 0.35s ease", position: "relative", overflow: "hidden",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.2)"
+              }}>
+              <div style={{ position: "absolute", top: -30, right: -30, width: 100, height: 100, borderRadius: "50%", background: `${group.accent}08`, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${group.accent}00, ${group.accent}50, ${group.accent}00)`, opacity: 0, transition: "opacity 0.35s" }} className="skill-line" />
               <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 18 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${c.blue}28, ${c.cyan}18)`, border: `1px solid ${c.blue}28`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <group.Icon size={20} color={c.blueBright} />
+                <div style={{ width: 46, height: 46, borderRadius: 13, background: `linear-gradient(135deg, ${group.accent}28, ${group.accent}14)`, border: `1px solid ${group.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <group.Icon size={21} color={group.accent} />
                 </div>
-                <span style={{ color: c.text, fontWeight: 700, fontSize: 15 }}>{group.category}</span>
+                <span style={{ color: c.text, fontWeight: 700, fontSize: 15, fontFamily: "'Syne', sans-serif" }}>{group.category}</span>
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {group.items.map((item) => (
-                  <motion.span key={item} whileHover={{ scale: 1.09, background: `${c.blue}28` }}
-                    style={{ background: `${c.blue}10`, border: `1px solid ${c.blue}22`, borderRadius: 8, padding: "5px 12px", color: c.textMuted, fontSize: 12, fontWeight: 500, cursor: "default", transition: "background 0.2s" }}>
+                  <motion.span key={item} whileHover={{ scale: 1.1, background: `${group.accent}28` }}
+                    style={{ background: `${group.accent}10`, border: `1px solid ${group.accent}22`, borderRadius: 8, padding: "5px 12px", color: c.textMuted, fontSize: 12, fontWeight: 500, cursor: "default", transition: "background 0.2s" }}>
                     {item}
                   </motion.span>
                 ))}
@@ -559,16 +762,17 @@ function Skills() {
           ))}
         </div>
 
-        <motion.div variants={fadeUp} custom={7} style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", marginTop: "clamp(34px,5vw,58px)" }}>
+        {/* Certs */}
+        <motion.div variants={fadeUp} custom={7} style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: "clamp(36px,5vw,60px)" }}>
           {[
-            { icon: <Award size={14} />, label: "NPTEL Student Topper — SKCT", col: c.blueBright },
-            { icon: <Star size={14} />, label: "Google Data Analytics — Coursera", col: c.cyan },
-            { icon: <Cpu size={14} />, label: "Advanced React — Coursera", col: c.violet },
-            { icon: <Code2 size={14} />, label: "Java — NPTEL Certified", col: c.blueBright },
-            { icon: <Mic size={14} />, label: "Hindi STT — HuggingFace Published", col: c.cyan },
+            { icon: <Award size={13} />, label: "NPTEL Student Topper — SKCT", col: c.blueBright },
+            { icon: <Star size={13} />, label: "Google Data Analytics — Coursera", col: c.cyan },
+            { icon: <Cpu size={13} />, label: "Advanced React — Coursera", col: c.violet },
+            { icon: <Code2 size={13} />, label: "Java — NPTEL Certified", col: c.blueBright },
+            { icon: <Mic size={13} />, label: "Hindi STT — HuggingFace Published", col: c.cyan },
           ].map(({ icon, label, col }) => (
-            <motion.div key={label} whileHover={{ scale: 1.05, borderColor: col }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "transparent", border: `1px solid ${c.blue}28`, borderRadius: 100, padding: "9px 20px", color: col, fontSize: 13, fontWeight: 600, transition: "border-color 0.25s" }}>
+            <motion.div key={label} whileHover={{ scale: 1.05, borderColor: col, boxShadow: `0 0 18px ${col}30` }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, background: c.glass, backdropFilter: "blur(12px)", border: `1px solid ${c.border}`, borderRadius: 100, padding: "9px 18px", color: col, fontSize: 12, fontWeight: 600, transition: "all 0.25s" }}>
               {icon} {label}
             </motion.div>
           ))}
@@ -578,71 +782,81 @@ function Skills() {
   );
 }
 
-/* ─── EXPERIENCE ─────────────────────────────────────────── */
+/* ─── EXPERIENCE ──────────────────────────────────────────── */
 function Experience() {
   return (
     <Section id="experience" style={{ padding: "clamp(80px,10vw,120px) 0" }}>
       <GlowDivider />
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(44px,6vw,84px) clamp(16px,4vw,24px) 0" }}>
-        <motion.div variants={fadeUp} custom={0} style={{ marginBottom: "clamp(42px,6vw,68px)" }}>
-          <p style={{ color: c.cyan, fontSize: 12, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 14 }}>Work History</p>
-          <h2 style={{ fontSize: "clamp(30px,5.5vw,60px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>Experience</h2>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(50px,6vw,90px) clamp(16px,4vw,24px) 0" }}>
+        <motion.div variants={fadeUp} custom={0} style={{ marginBottom: "clamp(44px,6vw,72px)" }}>
+          <p style={{ color: c.cyan, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 14 }}>Work History</p>
+          <h2 style={{ fontSize: "clamp(30px,5.5vw,62px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>Experience</h2>
         </motion.div>
 
+        {/* Main experience card */}
         <motion.div custom={1} variants={fadeUp}
-          whileHover={{ borderColor: `${c.blue}60`, boxShadow: `0 0 55px ${c.blue}14, 0 34px 64px rgba(0,0,0,0.28)` }}
-          style={{ background: "transparent", border: `1px solid rgba(59,130,246,0.18)`, borderRadius: 24, padding: "clamp(24px,4vw,42px)", marginBottom: 28, position: "relative", overflow: "hidden", transition: "all 0.35s ease" }}>
-          <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: `linear-gradient(180deg, ${c.blue}, ${c.cyan}, ${c.violet})` }} />
-          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}09, transparent 70%)`, pointerEvents: "none" }} />
+          whileHover={{ borderColor: `${c.blue}50`, boxShadow: `0 0 60px ${c.blue}12, 0 40px 70px rgba(0,0,0,0.25)` }}
+          style={{ background: c.glass, backdropFilter: "blur(20px)", border: `1px solid rgba(59,130,246,0.15)`, borderRadius: 26, padding: "clamp(24px,4vw,44px)", marginBottom: 24, position: "relative", overflow: "hidden", transition: "all 0.4s ease" }}>
+          {/* Side accent */}
+          <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: `linear-gradient(180deg, ${c.blue}, ${c.cyan}, ${c.violet})`, borderRadius: "4px 0 0 4px" }} />
+          {/* Glow orb */}
+          <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}10, transparent 70%)`, pointerEvents: "none" }} />
+          {/* Shimmer */}
+          <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 5, repeat: Infinity, repeatDelay: 4, ease: "easeInOut" }}
+            style={{ position: "absolute", top: 0, left: 0, width: "40%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)", pointerEvents: "none" }} />
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16, marginBottom: 26 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16, marginBottom: 28 }}>
             <div style={{ display: "flex", gap: "clamp(12px,2vw,18px)", alignItems: "center" }}>
-              <div style={{ width: 58, height: 58, borderRadius: 16, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 16, color: "#fff", flexShrink: 0, boxShadow: `0 0 28px ${c.blue}44` }}>GW</div>
+              <motion.div whileHover={{ scale: 1.1, rotate: 5 }}
+                style={{ width: 62, height: 62, borderRadius: 18, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18, color: "#fff", flexShrink: 0, boxShadow: `0 0 34px ${c.blue}50`, fontFamily: "monospace" }}>GW</motion.div>
               <div>
                 <h3 style={{ color: c.text, fontWeight: 800, fontSize: "clamp(15px,2.5vw,19px)", marginBottom: 5, lineHeight: 1.3, fontFamily: "'Syne', sans-serif" }}>Agentic AI Full Stack Developer Trainee</h3>
                 <p style={{ color: c.textMuted, fontSize: 14 }}>Genworx.ai · Chennai, India</p>
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ background: `${c.blue}20`, border: `1px solid ${c.blue}45`, color: c.blueBright, borderRadius: 100, padding: "5px 16px", fontSize: 12, fontWeight: 700 }}>Internship</span>
-              <span style={{ color: c.textDim, fontSize: 13 }}>Aug 2025 – Feb 2026</span>
+              <span style={{ background: `${c.blue}22`, border: `1px solid ${c.blue}45`, color: c.blueBright, borderRadius: 100, padding: "5px 16px", fontSize: 12, fontWeight: 700 }}>Internship</span>
+              <span style={{ color: c.textDim, fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}><Calendar size={12} /> Aug 2025 – Feb 2026</span>
             </div>
           </div>
 
-          <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 14 }}>
+          <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 13 }}>
             {[
               "Developed 3+ full-stack applications using React, Angular, and FastAPI, improving modular architecture, reusability, and development speed.",
               "Designed and implemented Agentic AI workflows using LangChain and LangGraph enabling dynamic decision-making, tool orchestration, and adaptive execution.",
               "Built RAG pipelines integrating PostgreSQL and vector databases for semantic search, contextual retrieval, and improved recommendation relevance.",
               "Applied Docker containerization and explored Kubernetes concepts including deployments, services, and scaling strategies.",
             ].map((point, i) => (
-              <motion.li key={i} custom={i+2} variants={fadeUp} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                <div style={{ width: 22, height: 22, borderRadius: "50%", background: `${c.blue}18`, border: `1px solid ${c.blue}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+              <motion.li key={i} custom={i+2} variants={slideLeft}
+                style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: `${c.blue}18`, border: `1px solid ${c.blue}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
                   <ChevronRight size={12} color={c.blueBright} />
                 </div>
-                <span style={{ color: c.textMuted, fontSize: "clamp(13px,2vw,14px)", lineHeight: 1.72 }}>{point}</span>
+                <span style={{ color: c.textMuted, fontSize: "clamp(13px,1.8vw,14px)", lineHeight: 1.75 }}>{point}</span>
               </motion.li>
             ))}
           </ul>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {["React", "Angular", "FastAPI", "LangChain", "LangGraph", "RAG", "Docker", "PostgreSQL"].map(t => (
-              <span key={t} style={{ background: `${c.blue}10`, border: `1px solid ${c.blue}28`, borderRadius: 8, padding: "5px 13px", color: c.blueBright, fontSize: 12, fontWeight: 600 }}>{t}</span>
+              <motion.span key={t} whileHover={{ scale: 1.08 }}
+                style={{ background: `${c.blue}12`, border: `1px solid ${c.blue}28`, borderRadius: 8, padding: "5px 13px", color: c.blueBright, fontSize: 12, fontWeight: 600 }}>{t}</motion.span>
             ))}
           </div>
         </motion.div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,300px), 1fr))", gap: 22 }}>
+        {/* Education cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,290px), 1fr))", gap: 20 }}>
           {[
             { icon: <GraduationCap size={22} color={c.cyan} />, degree: "B.E. Computer Science & Engineering", school: "Sri Krishna College of Technology · 2022–2026", grade: "CGPA: 8.6", col: c.cyan },
             { icon: <Briefcase size={22} color={c.violet} />, degree: "Higher Secondary Education", school: "St. Antony's Matric Hr Sec School", grade: "Class 12: 91% · Class 10: 90%", col: c.violet },
           ].map(({ icon, degree, school, grade, col }) => (
             <motion.div key={degree} custom={6} variants={fadeUp}
-              whileHover={{ borderColor: col, boxShadow: `0 0 32px ${col}14` }}
-              style={{ background: "transparent", border: `1px solid rgba(59,130,246,0.15)`, borderRadius: 18, padding: "clamp(18px,3vw,28px)", display: "flex", gap: 18, alignItems: "flex-start", transition: "all 0.3s ease" }}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: `${col}16`, border: `1px solid ${col}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>
+              whileHover={{ borderColor: col, boxShadow: `0 0 36px ${col}18`, y: -6 }}
+              style={{ background: c.glass, backdropFilter: "blur(16px)", border: `1px solid rgba(59,130,246,0.13)`, borderRadius: 20, padding: "clamp(18px,3vw,28px)", display: "flex", gap: 18, alignItems: "flex-start", transition: "all 0.3s ease" }}>
+              <div style={{ width: 52, height: 52, borderRadius: 15, background: `${col}16`, border: `1px solid ${col}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>
               <div>
-                <p style={{ color: c.text, fontWeight: 700, fontSize: 15, marginBottom: 5 }}>{degree}</p>
+                <p style={{ color: c.text, fontWeight: 700, fontSize: 15, marginBottom: 5, fontFamily: "'Syne', sans-serif" }}>{degree}</p>
                 <p style={{ color: c.textDim, fontSize: 13, marginBottom: 7 }}>{school}</p>
                 <p style={{ color: col, fontSize: 13, fontWeight: 700 }}>{grade}</p>
               </div>
@@ -654,65 +868,77 @@ function Experience() {
   );
 }
 
-/* ─── PROJECTS ───────────────────────────────────────────── */
+/* ─── PROJECTS ────────────────────────────────────────────── */
 function Projects() {
   return (
     <Section id="projects" style={{ padding: "clamp(80px,10vw,120px) 0" }}>
       <GlowDivider />
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(44px,6vw,84px) clamp(16px,4vw,24px) 0" }}>
-        <motion.div variants={fadeUp} custom={0} style={{ textAlign: "center", marginBottom: "clamp(50px,7vw,76px)" }}>
-          <p style={{ color: c.cyan, fontSize: 12, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 14 }}>My Work</p>
-          <h2 style={{ fontSize: "clamp(30px,5.5vw,60px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(50px,6vw,90px) clamp(16px,4vw,24px) 0" }}>
+        <motion.div variants={fadeUp} custom={0} style={{ textAlign: "center", marginBottom: "clamp(50px,7vw,80px)" }}>
+          <p style={{ color: c.cyan, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 14 }}>My Work</p>
+          <h2 style={{ fontSize: "clamp(30px,5.5vw,62px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>
             Featured{" "}
             <span style={{ background: `linear-gradient(135deg, ${c.blueBright}, ${c.cyan})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Projects</span>
           </h2>
         </motion.div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,320px), 1fr))", gap: "clamp(18px,2.5vw,28px)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,300px), 1fr))", gap: "clamp(16px,2.5vw,24px)" }}>
           {PROJECTS.map((proj, i) => (
             <motion.div key={proj.id} custom={i+1} variants={fadeUp}
-              whileHover={{ y: -12, boxShadow: `0 36px 80px ${proj.accent}20, 0 0 0 1px ${proj.accent}45` }}
-              style={{ background: "transparent", border: `1px solid rgba(59,130,246,0.15)`, borderRadius: 24, padding: "clamp(24px,3vw,34px)", position: "relative", overflow: "hidden", transition: "all 0.4s ease" }}>
-              <div style={{ position: "absolute", top: 0, right: 0, width: 140, height: 140, borderRadius: "0 24px 0 140px", background: `${proj.accent}0b`, pointerEvents: "none" }} />
-              <div style={{ position: "absolute", bottom: 0, left: 0, width: 90, height: 90, borderRadius: "0 90px 0 24px", background: `${proj.accent}06`, pointerEvents: "none" }} />
+              whileHover={{ y: -14, boxShadow: `0 40px 90px ${proj.accent}22, 0 0 0 1px ${proj.accent}40` }}
+              style={{ background: c.glass, backdropFilter: "blur(18px)", border: `1px solid rgba(59,130,246,0.14)`, borderRadius: 26, padding: "clamp(22px,3vw,32px)", position: "relative", overflow: "hidden", transition: "all 0.4s ease" }}>
+              {/* Corner blobs */}
+              <div style={{ position: "absolute", top: 0, right: 0, width: 160, height: 160, borderRadius: "0 26px 0 160px", background: `${proj.accent}0c`, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", bottom: 0, left: 0, width: 100, height: 100, borderRadius: "0 100px 0 26px", background: `${proj.accent}07`, pointerEvents: "none" }} />
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-                <motion.div whileHover={{ scale: 1.14, rotate: 7 }}
-                  style={{ width: 60, height: 60, borderRadius: 17, background: `${proj.accent}20`, border: `1px solid ${proj.accent}38`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 24px ${proj.accent}22` }}>
+              {/* Shimmer */}
+              <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 5, ease: "easeInOut" }}
+                style={{ position: "absolute", top: 0, left: 0, width: "35%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)", pointerEvents: "none" }} />
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 }}>
+                <motion.div whileHover={{ scale: 1.15, rotate: 8 }}
+                  style={{ width: 62, height: 62, borderRadius: 18, background: `${proj.accent}22`, border: `1px solid ${proj.accent}40`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 28px ${proj.accent}28` }}>
                   <proj.Icon size={30} color={proj.accent} strokeWidth={1.5} />
                 </motion.div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                  <span style={{ background: `${proj.accent}18`, border: `1px solid ${proj.accent}42`, color: proj.accent, borderRadius: 100, padding: "5px 16px", fontSize: 11, fontWeight: 800, letterSpacing: "0.09em" }}>{proj.tag}</span>
+                  <span style={{ background: `${proj.accent}20`, border: `1px solid ${proj.accent}45`, color: proj.accent, borderRadius: 100, padding: "5px 16px", fontSize: 11, fontWeight: 800, letterSpacing: "0.09em" }}>{proj.tag}</span>
                   {proj.badge && (
-                    <span style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", borderRadius: 100, padding: "3px 12px", fontSize: 11, fontWeight: 700 }}>{proj.badge}</span>
+                    <span style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 700 }}>{proj.badge}</span>
                   )}
                 </div>
               </div>
 
-              <h3 style={{ color: c.text, fontWeight: 800, fontSize: "clamp(15px,2.5vw,18px)", marginBottom: 14, lineHeight: 1.35, fontFamily: "'Syne', sans-serif" }}>{proj.title}</h3>
-              <p style={{ color: c.textDim, fontSize: "clamp(12px,2vw,14px)", lineHeight: 1.72, marginBottom: 24 }}>{proj.desc}</p>
+              <div style={{ marginBottom: 12 }}>
+                <h3 style={{ color: c.text, fontWeight: 900, fontSize: "clamp(17px,2.5vw,20px)", marginBottom: 3, lineHeight: 1.2, fontFamily: "'Syne', sans-serif" }}>{proj.title}</h3>
+                <p style={{ color: proj.accent, fontSize: 13, fontWeight: 600, opacity: 0.8 }}>{proj.subtitle}</p>
+              </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 28 }}>
+              <p style={{ color: c.textDim, fontSize: "clamp(12px,1.8vw,13px)", lineHeight: 1.8, marginBottom: 22 }}>{proj.desc}</p>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 24 }}>
                 {proj.stack.map((s) => (
-                  <span key={s} style={{ background: `${c.blue}10`, border: `1px solid ${c.blue}22`, borderRadius: 8, padding: "4px 11px", color: c.textMuted, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                  <span key={s} style={{ background: `${c.blue}0e`, border: `1px solid ${c.blue}20`, borderRadius: 7, padding: "4px 10px", color: c.textMuted, fontSize: 11, fontWeight: 500 }}>{s}</span>
                 ))}
               </div>
 
-              {/* Links row — HuggingFace + Colab for STT project, GitHub for others */}
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                <motion.a href={proj.link} target="_blank" rel="noreferrer" whileHover={{ gap: 14 }}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 8, color: proj.accent, fontWeight: 700, fontSize: 14, textDecoration: "none", transition: "gap 0.2s" }}>
-                  <ExternalLink size={14} /> {proj.id === 3 ? "HuggingFace Hub" : "View Project"}
+                <motion.a href={proj.link} target="_blank" rel="noreferrer"
+                  whileHover={{ x: 4 }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 7, color: proj.accent, fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+                  <ExternalLink size={13} /> {proj.id === 3 ? "HuggingFace Hub" : "View Project"}
+                  <ArrowUpRight size={12} />
                 </motion.a>
                 {proj.colab && (
-                  <motion.a href={proj.colab} target="_blank" rel="noreferrer" whileHover={{ gap: 14 }}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 8, color: c.cyan, fontWeight: 700, fontSize: 14, textDecoration: "none", transition: "gap 0.2s" }}>
-                    <ExternalLink size={14} /> Colab Notebook
+                  <motion.a href={proj.colab} target="_blank" rel="noreferrer"
+                    whileHover={{ x: 4 }}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 7, color: c.cyan, fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+                    <ExternalLink size={13} /> Colab <ArrowUpRight size={12} />
                   </motion.a>
                 )}
               </div>
 
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${proj.accent}, ${proj.accent}00)` }} />
+              {/* Bottom accent line */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${proj.accent}80, ${proj.accent}20, transparent)` }} />
             </motion.div>
           ))}
         </div>
@@ -721,75 +947,96 @@ function Projects() {
   );
 }
 
-/* ─── CONTACT ────────────────────────────────────────────── */
+/* ─── CONTACT ─────────────────────────────────────────────── */
 function Contact() {
   const [copied, setCopied] = useState(false);
-  const copy = () => { navigator.clipboard.writeText("shaikhaniscoder07@gmail.com"); setCopied(true); setTimeout(() => setCopied(false), 2200); };
+  const copy = () => { navigator.clipboard.writeText("shaikhaniscoder07@gmail.com"); setCopied(true); setTimeout(() => setCopied(false), 2400); };
 
   return (
     <Section id="contact" style={{ padding: "clamp(80px,10vw,120px) 0" }}>
       <GlowDivider />
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(44px,6vw,84px) clamp(16px,4vw,24px) 0" }}>
-        <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(36px,5vw,68px)", alignItems: "start" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(50px,6vw,90px) clamp(16px,4vw,24px) 0" }}>
+        <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(36px,5vw,70px)", alignItems: "start" }}>
           <div>
-            <motion.p variants={fadeUp} custom={0} style={{ color: c.cyan, fontSize: 12, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 14 }}>Get In Touch</motion.p>
+            <motion.p variants={fadeUp} custom={0} style={{ color: c.cyan, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 14 }}>Get In Touch</motion.p>
             <motion.h2 variants={fadeUp} custom={1}
-              style={{ fontSize: "clamp(30px,5.5vw,60px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", marginBottom: 22, lineHeight: 1.05, fontFamily: "'Syne', sans-serif" }}>
+              style={{ fontSize: "clamp(30px,5.5vw,62px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", marginBottom: 22, lineHeight: 1.02, fontFamily: "'Syne', sans-serif" }}>
               Let's Build<br />Something{" "}
               <span style={{ background: `linear-gradient(135deg, ${c.blueBright}, ${c.cyan})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Great</span>
             </motion.h2>
-            <motion.p variants={fadeUp} custom={2} style={{ color: c.textDim, fontSize: "clamp(13px,2vw,15px)", lineHeight: 1.78, marginBottom: 46 }}>
-              Open to full-time roles, freelance projects, and AI/Full Stack collaborations. Based in Coimbatore — available remotely worldwide.
+            <motion.p variants={fadeUp} custom={2}
+              style={{ color: c.textDim, fontSize: "clamp(13px,1.8vw,15px)", lineHeight: 1.85, marginBottom: 44 }}>
+              Open to full-time roles, freelance projects, and AI / Full Stack collaborations. Based in Coimbatore — available remotely worldwide.
             </motion.p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {[
-                { icon: <Mail size={16} color={c.blueBright} />, label: "shaikhaniscoder07@gmail.com", href: "mailto:shaikhaniscoder07@gmail.com" },
-                { icon: <Phone size={16} color={c.cyan} />, label: "+91 7548899769", href: "tel:+917548899769" },
-                { icon: <FaLinkedin size={16} color={c.blueBright} />, label: "LinkedIn Profile", href: "https://linkedin.com" },
-                { icon: <GitBranch size={16} color={c.violet} />, label: "GitHub Profile", href: "https://github.com/shaikhanis" },
-                { icon: <Mic size={16} color={c.cyan} />, label: "HuggingFace — ShaikhAnis007", href: "https://huggingface.co/ShaikhAnis007" },
+                { icon: <Mail size={15} color={c.blueBright} />, label: "shaikhaniscoder07@gmail.com", href: "mailto:shaikhaniscoder07@gmail.com" },
+                { icon: <Phone size={15} color={c.cyan} />, label: "+91 7548899769", href: "tel:+917548899769" },
+                { icon: <FaLinkedin size={15} color={c.blueBright} />, label: "LinkedIn Profile", href: "https://linkedin.com" },
+                { icon: <GitBranch size={15} color={c.violet} />, label: "GitHub Profile", href: "https://github.com/shaikhanis" },
+                { icon: <Mic size={15} color={c.cyan} />, label: "HuggingFace — ShaikhAnis007", href: "https://huggingface.co/ShaikhAnis007" },
               ].map(({ icon, label, href }, i) => (
-                <motion.a key={label} custom={i+3} variants={fadeUp} href={href} target="_blank" rel="noreferrer"
-                  whileHover={{ x: 9 }}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 14, color: c.textMuted, textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "color 0.2s" }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 12, background: `${c.blue}12`, border: `1px solid ${c.blue}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>
-                  <span style={{ fontSize: "clamp(12px,2vw,14px)" }}>{label}</span>
-                  <ArrowUpRight size={13} style={{ marginLeft: "auto", opacity: 0.38 }} />
+                <motion.a key={label} custom={i+3} variants={fadeUp}
+                  href={href} target="_blank" rel="noreferrer"
+                  whileHover={{ x: 10, background: `${c.blue}10` }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 14, color: c.textMuted, textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "10px 14px", borderRadius: 13, transition: "all 0.25s" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 13, background: `${c.blue}12`, border: `1px solid ${c.blue}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>
+                  <span style={{ fontSize: "clamp(12px,1.8vw,14px)" }}>{label}</span>
+                  <ArrowUpRight size={13} style={{ marginLeft: "auto", opacity: 0.35 }} />
                 </motion.a>
               ))}
             </div>
           </div>
 
-          <motion.div variants={scaleIn} custom={1}>
-            <div style={{ background: "transparent", border: `1px solid rgba(59,130,246,0.18)`, borderRadius: 28, padding: "clamp(24px,4vw,42px)", boxShadow: `0 0 90px ${c.blue}12`, position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: -55, right: -55, width: 190, height: 190, borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}09, transparent 70%)`, pointerEvents: "none" }} />
-              <p style={{ color: c.textDim, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.13em", marginBottom: 20 }}>Drop a message</p>
-              <motion.div onClick={copy} whileHover={{ borderColor: c.blue, boxShadow: `0 0 26px ${c.blue}20` }} whileTap={{ scale: 0.98 }}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(3,11,22,0.5)", border: `1px solid ${c.border}`, borderRadius: 14, padding: "14px 18px", cursor: "pointer", marginBottom: 16, transition: "all 0.2s" }}>
-                <span style={{ color: c.textMuted, fontSize: "clamp(11px,1.8vw,13px)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>shaikhaniscoder07@gmail.com</span>
+          <motion.div variants={scaleIn}>
+            <div style={{
+              background: c.glass, backdropFilter: "blur(24px)",
+              border: `1px solid rgba(59,130,246,0.16)`,
+              borderRadius: 28, padding: "clamp(24px,4vw,44px)",
+              boxShadow: `0 0 100px ${c.blue}10, 0 60px 80px rgba(0,0,0,0.25)`,
+              position: "relative", overflow: "hidden"
+            }}>
+              <div style={{ position: "absolute", top: -70, right: -70, width: 220, height: 220, borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}10, transparent 70%)`, pointerEvents: "none" }} />
+              <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 5, repeat: Infinity, repeatDelay: 4 }}
+                style={{ position: "absolute", top: 0, left: 0, width: "40%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)", pointerEvents: "none" }} />
+
+              <p style={{ color: c.textDim, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 20 }}>Drop a message</p>
+
+              <motion.div onClick={copy}
+                whileHover={{ borderColor: c.blue, boxShadow: `0 0 28px ${c.blue}22` }}
+                whileTap={{ scale: 0.98 }}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(3,11,22,0.5)", border: `1px solid ${c.border}`, borderRadius: 14, padding: "13px 18px", cursor: "pointer", marginBottom: 14, transition: "all 0.25s" }}>
+                <span style={{ color: c.textMuted, fontSize: "clamp(11px,1.6vw,13px)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>shaikhaniscoder07@gmail.com</span>
                 <AnimatePresence mode="wait">
-                  {copied ? <motion.span key="c" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><Check size={16} color="#22c55e" /></motion.span>
-                          : <motion.span key="d" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><Copy size={16} color={c.blueBright} /></motion.span>}
+                  {copied
+                    ? <motion.span key="c" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}><Check size={16} color="#22c55e" /></motion.span>
+                    : <motion.span key="d" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><Copy size={16} color={c.blueBright} /></motion.span>}
                 </AnimatePresence>
               </motion.div>
-              <motion.a href="mailto:shaikhaniscoder07@gmail.com" whileHover={{ scale: 1.02, boxShadow: `0 0 34px ${c.blue}55` }} whileTap={{ scale: 0.97 }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, padding: 16, borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: 15, textDecoration: "none", marginBottom: 24, boxShadow: `0 0 22px ${c.blue}44` }}>
+
+              <motion.a href="mailto:shaikhaniscoder07@gmail.com"
+                whileHover={{ scale: 1.02, boxShadow: `0 0 40px ${c.blue}60` }}
+                whileTap={{ scale: 0.97 }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, padding: 16, borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: 15, textDecoration: "none", marginBottom: 24, boxShadow: `0 0 24px ${c.blue}44` }}>
                 <Mail size={16} /> Send Email
               </motion.a>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
                 <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${c.border})` }} />
                 <span style={{ color: c.textDim, fontSize: 12 }}>or connect on</span>
                 <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${c.border}, transparent)` }} />
               </div>
-              <div style={{ display: "flex", gap: 12 }}>
+
+              <div style={{ display: "flex", gap: 10 }}>
                 {[
-                  { label: "LinkedIn", icon: <FaLinkedin size={15} />, href: "https://linkedin.com" },
-                  { label: "GitHub", icon: <GitBranch size={15} />, href: "https://github.com/shaikhanis" },
-                  { label: "HuggingFace", icon: <Mic size={15} />, href: "https://huggingface.co/ShaikhAnis007" },
+                  { label: "LinkedIn", icon: <FaLinkedin size={14} />, href: "https://linkedin.com" },
+                  { label: "GitHub", icon: <GitBranch size={14} />, href: "https://github.com/shaikhanis" },
+                  { label: "HuggingFace", icon: <Mic size={14} />, href: "https://huggingface.co/ShaikhAnis007" },
                 ].map(({ label, icon, href }) => (
-                  <motion.a key={label} href={href} target="_blank" rel="noreferrer" whileHover={{ scale: 1.05, borderColor: c.blue }}
-                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: 14, borderRadius: 14, border: `1px solid ${c.border}`, color: c.textMuted, fontWeight: 600, fontSize: 12, textDecoration: "none", transition: "border-color 0.2s" }}>
+                  <motion.a key={label} href={href} target="_blank" rel="noreferrer"
+                    whileHover={{ scale: 1.06, borderColor: c.blue, boxShadow: `0 0 16px ${c.blue}22` }}
+                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "13px 8px", borderRadius: 13, border: `1px solid ${c.border}`, color: c.textMuted, fontWeight: 600, fontSize: "clamp(10px,1.5vw,12px)", textDecoration: "none", transition: "all 0.25s", background: "rgba(3,9,18,0.3)" }}>
                     {icon} {label}
                   </motion.a>
                 ))}
@@ -802,49 +1049,72 @@ function Contact() {
   );
 }
 
-/* ─── FOOTER ─────────────────────────────────────────────── */
+/* ─── FOOTER ──────────────────────────────────────────────── */
 function Footer() {
   return (
-    <footer style={{ borderTop: `1px solid rgba(59,130,246,0.12)`, background: "transparent", padding: "34px clamp(16px,4vw,24px)", position: "relative", zIndex: 1 }}>
+    <footer style={{ borderTop: `1px solid rgba(59,130,246,0.1)`, padding: "36px clamp(16px,4vw,24px)", position: "relative", zIndex: 1 }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#fff", boxShadow: `0 0 16px ${c.blue}44` }}>SA</div>
-          <span style={{ color: c.textMuted, fontSize: 13 }}>Shaikh Anis · Coimbatore, India</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 11, background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#fff", boxShadow: `0 0 18px ${c.blue}50` }}>SA</div>
+          <div>
+            <div style={{ color: c.text, fontWeight: 700, fontSize: 14, fontFamily: "'Syne', sans-serif" }}>Shaikh Anis</div>
+            <div style={{ color: c.textDim, fontSize: 12 }}>Coimbatore, India</div>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
-          <p style={{ color: c.textDim, fontSize: 13 }}>Built with React & Three.js</p>
-          <p style={{ color: c.textDim, fontSize: 13 }}>© 2025 All rights reserved</p>
+        <div style={{ display: "flex", gap: "clamp(18px,3vw,32px)", alignItems: "center", flexWrap: "wrap" }}>
+          <p style={{ color: c.textDim, fontSize: 12 }}>Built with React & Three.js</p>
+          <p style={{ color: c.textDim, fontSize: 12 }}>© 2025 All rights reserved</p>
         </div>
       </div>
     </footer>
   );
 }
 
-/* ─── GLOBAL STYLES ──────────────────────────────────────── */
+/* ─── SCROLL PROGRESS ─────────────────────────────────────── */
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  return (
+    <motion.div style={{
+      position: "fixed", top: 0, left: 0, right: 0, height: 2, zIndex: 200,
+      background: `linear-gradient(90deg, ${c.blue}, ${c.cyan}, ${c.violet})`,
+      transformOrigin: "0%", scaleX,
+    }} />
+  );
+}
+
+/* ─── GLOBAL STYLES ───────────────────────────────────────── */
 const GlobalStyles = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body { background: #020810; color: #f0f6ff; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    body { background: #030912; color: #eef4ff; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     h1, h2, h3 { font-family: 'Syne', sans-serif; }
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: #020810; }
-    ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #2563eb, #06b6d4); border-radius: 4px; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #030912; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #2563eb, #06b6d4, #7c3aed); border-radius: 4px; }
+    ::selection { background: rgba(37,99,235,0.35); color: #eef4ff; }
+
+    @keyframes orbFloat1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(3%,4%) scale(1.06); } }
+    @keyframes orbFloat2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-4%,-3%) scale(1.08); } }
+    @keyframes orbFloat3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(2%,-5%) scale(1.05); } }
+
     @media (max-width: 768px) {
       .hero-grid { grid-template-columns: 1fr !important; }
       .hero-card { display: none !important; }
       .contact-grid { grid-template-columns: 1fr !important; }
       .nav-desktop { display: none !important; }
       .nav-mobile-btn { display: flex !important; }
+      .avail-mobile { display: inline-flex !important; }
     }
-    @media (max-width: 480px) { .hero-grid { padding-top: 96px !important; } }
-    .avail-mobile { display: none; }
-    @media (max-width: 768px) { .avail-mobile { display: inline-flex !important; } }
+    @media (max-width: 480px) {
+      .hero-grid { padding-top: 100px !important; }
+    }
   `}</style>
 );
 
-/* ─── APP ────────────────────────────────────────────────── */
+/* ─── APP ─────────────────────────────────────────────────── */
 export default function App() {
   const [active, setActive] = useState("home");
 
@@ -852,7 +1122,7 @@ export default function App() {
     const sections = ["home", "skills", "experience", "projects", "contact"];
     const obs = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) setActive(e.target.id); }),
-      { threshold: 0.25 }
+      { threshold: 0.2 }
     );
     sections.forEach((id) => { const el = document.getElementById(id); if (el) obs.observe(el); });
     return () => obs.disconnect();
@@ -861,7 +1131,10 @@ export default function App() {
   return (
     <>
       <GlobalStyles />
+      <MagneticCursor />
+      <ScrollProgress />
       <ThreeBackground />
+      <GlowOrbs />
       <div style={{ background: "transparent", minHeight: "100vh", position: "relative" }}>
         <Navbar active={active} />
         <Hero />
