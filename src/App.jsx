@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useInView } from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useInView } from "framer-motion";
+import * as THREE from "three";
 import {
   Mail, Phone, ExternalLink, Menu, X, Copy, Check,
   Cpu, Globe, Server, Database, Bot, Cloud, Code2, Briefcase, GraduationCap,
@@ -10,17 +11,20 @@ import { FaLinkedin } from "react-icons/fa";
 
 /* ─── PALETTE ─────────────────────────────────────────────── */
 const c = {
-  bg: "#020810",
+  bg: "#030912",
   blue: "#2563eb",
   blueBright: "#3b82f6",
   blueGlow: "#1d4ed8",
+  blueLight: "#60a5fa",
+  blueDim: "#1e40af12",
   cyan: "#06b6d4",
   violet: "#7c3aed",
-  border: "#0f1e35",
+  pink: "#ec4899",
+  border: "#162035",
   text: "#eef4ff",
-  textMuted: "#7a9cc0",
-  textDim: "#334d6e",
-  glass: "rgba(4,12,30,0.55)",
+  textMuted: "#8ba4c2",
+  textDim: "#3d5270",
+  glass: "rgba(6,15,35,0.6)",
 };
 
 /* ─── DATA ───────────────────────────────────────────────── */
@@ -29,27 +33,28 @@ const PROJECTS = [
     id: 1, title: "IntelliHire", subtitle: "Agentic AI Recruitment Platform", tag: "FEATURED",
     stack: ["React", "FastAPI", "PostgreSQL", "Celery", "Redis", "AWS", "Groq LLM", "Gemini Embeddings"],
     desc: "End-to-end agentic sourcing engine with a 6-pass pipeline that autonomously searches candidates, applies hybrid vector + LLM scoring, and delivers ranked, briefed shortlists.",
-    link: "https://github.com/Shaikhanis7/IntelliHire", Icon: Bot, accent: "#2563eb",
+    link: "https://github.com/Shaikhanis7/IntelliHire", Icon: Bot, accent: "#2563eb", accentDark: "#1d40af",
   },
   {
     id: 2, title: "MindfulAI", subtitle: "Agentic RAG Mental Health Assistant", tag: "AI",
     stack: ["LangGraph", "LangChain", "FastAPI", "React", "ChromaDB", "Groq LLM", "IndicTrans2", "DeepFace"],
-    desc: "Full-stack AI mental wellness platform with agentic RAG chat, real-time crisis detection, DeepFace emotion analysis, 12-language support, voice I/O, mood tracking.",
-    link: "https://github.com/Shaikhanis7/final_sem_project", Icon: BrainCircuit, accent: "#06b6d4",
+    desc: "Full-stack AI mental wellness platform with agentic RAG chat, real-time crisis detection & emergency alerts, DeepFace emotion analysis, 12-language support, voice I/O, mood tracking.",
+    link: "https://github.com/Shaikhanis7/final_sem_project", Icon: BrainCircuit, accent: "#06b6d4", accentDark: "#0e7490",
   },
   {
     id: 3, title: "Hindi STT", subtitle: "Whisper Medium Fine-tuned", tag: "ML / NLP",
     stack: ["Python", "Whisper Medium", "HuggingFace", "Seq2SeqTrainer", "Kathbath", "Transformers"],
-    desc: "Fine-tuned OpenAI Whisper Medium on AI4Bharat Kathbath Hindi dataset. Achieved 47.1% WER reduction (0.41→0.22) and 69.4% CER reduction. Published on HuggingFace Hub.",
+    desc: "Fine-tuned OpenAI Whisper Medium on AI4Bharat Kathbath Hindi speech dataset. Achieved 47.1% WER reduction (0.41→0.22) and 69.4% CER reduction. Model published on HuggingFace Hub.",
     link: "https://huggingface.co/ShaikhAnis007/whisper-medium-hindi",
     colab: "https://colab.research.google.com/drive/1fHOK2ymEmDiWI4_XShxcZKnP3OjySqLg?usp=sharing",
-    Icon: Mic, accent: "#7c3aed", badge: "WER ↓47.1%",
+    Icon: Mic, accent: "#7c3aed", accentDark: "#5b21b6",
+    badge: "WER ↓47.1%",
   },
   {
     id: 4, title: "Freelancer App", subtitle: "Full Stack Web Platform", tag: "FULL STACK",
     stack: ["React", "Spring Boot", "MySQL", "JWT", "Spring Security"],
     desc: "Secure full-stack platform with JWT authentication, RBAC with Spring Security, and scalable backend APIs using Spring Boot REST architecture and JPA/Hibernate.",
-    link: "https://github.com/Shaikhanis7", Icon: Users, accent: "#ec4899",
+    link: "https://github.com/Shaikhanis7", Icon: Users, accent: "#ec4899", accentDark: "#9d174d",
   },
 ];
 
@@ -63,190 +68,342 @@ const SKILLS = [
 ];
 
 const TICKER_ITEMS = [
-  "Full Stack Developer","Agentic AI Engineer","LangChain & LangGraph",
-  "RAG Pipelines","React & Angular","FastAPI & Spring Boot",
-  "Docker & Kubernetes","500+ DSA Problems","Whisper Fine-tuning","HuggingFace",
+  "Full Stack Developer", "Agentic AI Engineer", "LangChain & LangGraph",
+  "RAG Pipelines", "React & Angular", "FastAPI & Spring Boot",
+  "Docker & Kubernetes", "500+ DSA Problems", "Whisper Fine-tuning", "HuggingFace",
 ];
 
-/* ─── ANIMATIONS ──────────────────────────────────────────── */
+/* ─── ANIMATION VARIANTS ──────────────────────────────────── */
 const fadeUp = {
-  hidden: { opacity: 0, y: 40, filter: "blur(5px)" },
-  visible: (i = 0) => ({ opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.75, delay: i * 0.09, ease: [0.16, 1, 0.3, 1] } }),
+  hidden: { opacity: 0, y: 50, filter: "blur(6px)" },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0, filter: "blur(0px)",
+    transition: { duration: 0.8, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }
+  }),
 };
 const scaleIn = {
-  hidden: { opacity: 0, scale: 0.88, filter: "blur(8px)" },
+  hidden: { opacity: 0, scale: 0.85, filter: "blur(8px)" },
   visible: { opacity: 1, scale: 1, filter: "blur(0px)", transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
 };
 const slideLeft = {
-  hidden: { opacity: 0, x: -40, filter: "blur(4px)" },
-  visible: (i = 0) => ({ opacity: 1, x: 0, filter: "blur(0px)", transition: { duration: 0.7, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] } }),
+  hidden: { opacity: 0, x: -60, filter: "blur(6px)" },
+  visible: (i = 0) => ({
+    opacity: 1, x: 0, filter: "blur(0px)",
+    transition: { duration: 0.8, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }
+  }),
 };
+
+/* ─── 3D CARD HOOK ────────────────────────────────────────── */
+function use3DCard(intensity = 15) {
+  const ref = useRef(null);
+  const [transform, setTransform] = useState("perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)");
+  const [glowPos, setGlowPos] = useState({ x: 50, y: 50 });
+
+  const handleMouseMove = useCallback((e) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const rotX = ((y - cy) / cy) * -intensity;
+    const rotY = ((x - cx) / cx) * intensity;
+    setTransform(`perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(12px) scale(1.02)`);
+    setGlowPos({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
+  }, [intensity]);
+
+  const handleMouseLeave = useCallback(() => {
+    setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px) scale(1)");
+    setGlowPos({ x: 50, y: 50 });
+  }, []);
+
+  return { ref, transform, glowPos, handleMouseMove, handleMouseLeave };
+}
+
+/* ─── 3D CARD WRAPPER ─────────────────────────────────────── */
+function Card3D({ children, style, intensity = 12, accentColor = c.blue, className = "" }) {
+  const { ref, transform, glowPos, handleMouseMove, handleMouseLeave } = use3DCard(intensity);
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        transform,
+        transition: "transform 0.15s ease-out",
+        transformStyle: "preserve-3d",
+        position: "relative",
+        ...style,
+      }}
+    >
+      {/* Dynamic glow follow */}
+      <div style={{
+        position: "absolute", inset: 0, borderRadius: "inherit", pointerEvents: "none", zIndex: 0,
+        background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, ${accentColor}22 0%, transparent 60%)`,
+        transition: "background 0.1s ease",
+      }} />
+      {children}
+    </div>
+  );
+}
 
 /* ─── MAGNETIC CURSOR ─────────────────────────────────────── */
 function MagneticCursor() {
   const cursorRef = useRef(null);
   const dotRef = useRef(null);
-  const pos = useRef({ x: 0, y: 0 });
-  const target = useRef({ x: 0, y: 0 });
+  const posRef = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  const targetRef = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  const visibleRef = useRef(false);
+
   useEffect(() => {
-    if (window.innerWidth < 1024) return;
+    if (window.innerWidth < 768) return;
     let raf;
-    window.addEventListener("mousemove", e => { target.current = { x: e.clientX, y: e.clientY }; });
+
+    const move = (e) => {
+      targetRef.current = { x: e.clientX, y: e.clientY };
+      if (!visibleRef.current) {
+        visibleRef.current = true;
+        if (cursorRef.current) cursorRef.current.style.opacity = "0.35";
+        if (dotRef.current) dotRef.current.style.opacity = "0.9";
+      }
+    };
+
+    window.addEventListener("mousemove", move);
+
     const tick = () => {
-      pos.current.x += (target.current.x - pos.current.x) * 0.11;
-      pos.current.y += (target.current.y - pos.current.y) * 0.11;
-      if (cursorRef.current) cursorRef.current.style.transform = `translate(${pos.current.x - 18}px,${pos.current.y - 18}px)`;
-      if (dotRef.current) dotRef.current.style.transform = `translate(${target.current.x - 3}px,${target.current.y - 3}px)`;
+      posRef.current.x += (targetRef.current.x - posRef.current.x) * 0.12;
+      posRef.current.y += (targetRef.current.y - posRef.current.y) * 0.12;
+      if (cursorRef.current) {
+        cursorRef.current.style.left = `${posRef.current.x - 20}px`;
+        cursorRef.current.style.top = `${posRef.current.y - 20}px`;
+      }
+      if (dotRef.current) {
+        dotRef.current.style.left = `${targetRef.current.x - 4}px`;
+        dotRef.current.style.top = `${targetRef.current.y - 4}px`;
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    const over = () => { if (cursorRef.current) { cursorRef.current.style.width = "52px"; cursorRef.current.style.height = "52px"; cursorRef.current.style.opacity = "0.5"; } };
-    const out = () => { if (cursorRef.current) { cursorRef.current.style.width = "36px"; cursorRef.current.style.height = "36px"; cursorRef.current.style.opacity = "0.28"; } };
-    document.querySelectorAll("a,button").forEach(el => { el.addEventListener("mouseenter", over); el.addEventListener("mouseleave", out); });
-    return () => cancelAnimationFrame(raf);
+
+    const over = () => {
+      if (cursorRef.current) {
+        cursorRef.current.style.width = "60px";
+        cursorRef.current.style.height = "60px";
+        cursorRef.current.style.opacity = "0.6";
+      }
+    };
+    const out = () => {
+      if (cursorRef.current) {
+        cursorRef.current.style.width = "40px";
+        cursorRef.current.style.height = "40px";
+        cursorRef.current.style.opacity = "0.35";
+      }
+    };
+    const addListeners = () => {
+      document.querySelectorAll("a, button, [data-magnetic]").forEach(el => {
+        el.addEventListener("mouseenter", over);
+        el.addEventListener("mouseleave", out);
+      });
+    };
+    addListeners();
+
+    return () => {
+      window.removeEventListener("mousemove", move);
+      cancelAnimationFrame(raf);
+    };
   }, []);
+
   return (
     <>
-      <div ref={cursorRef} style={{ position: "fixed", width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${c.cyan}`, opacity: 0.28, pointerEvents: "none", zIndex: 9999, top: 0, left: 0, transition: "width 0.22s, height 0.22s, opacity 0.22s" }} />
-      <div ref={dotRef} style={{ position: "fixed", width: 6, height: 6, borderRadius: "50%", background: c.cyan, pointerEvents: "none", zIndex: 9999, top: 0, left: 0 }} />
+      <div ref={cursorRef} style={{
+        position: "fixed", width: 40, height: 40, borderRadius: "50%",
+        border: `1.5px solid ${c.blueBright}`, opacity: 0,
+        pointerEvents: "none", zIndex: 9999, top: 0, left: 0,
+        transition: "width 0.3s, height 0.3s, opacity 0.3s",
+        mixBlendMode: "difference", willChange: "left, top",
+      }} />
+      <div ref={dotRef} style={{
+        position: "fixed", width: 8, height: 8, borderRadius: "50%",
+        background: c.blueBright, opacity: 0,
+        pointerEvents: "none", zIndex: 9999, top: 0, left: 0,
+        willChange: "left, top",
+      }} />
     </>
   );
 }
 
-/* ─── WATER WAVE WEBGL BACKGROUND ────────────────────────── */
-function WaterBackground() {
+/* ─── THREE.JS BACKGROUND ─────────────────────────────────── */
+function ThreeBackground() {
   const canvasRef = useRef(null);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-    if (!gl) return;
+    const W = () => window.innerWidth;
+    const H = () => document.documentElement.scrollHeight;
+    const isMobile = W() < 768;
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W(), H());
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(55, W() / H(), 0.1, 2000);
+    camera.position.z = 8;
+    const rng = (a, b) => a + Math.random() * (b - a);
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      gl.viewport(0, 0, canvas.width, canvas.height);
-    };
-    resize();
-    window.addEventListener("resize", resize);
+    const s1n = isMobile ? 2000 : 5000;
+    const s1p = new Float32Array(s1n * 3);
+    for (let i = 0; i < s1n; i++) { s1p[i*3]=rng(-55,55); s1p[i*3+1]=rng(-95,95); s1p[i*3+2]=rng(-30,-8); }
+    const s1g = new THREE.BufferGeometry(); s1g.setAttribute("position", new THREE.BufferAttribute(s1p, 3));
+    const s1m = new THREE.PointsMaterial({ color: 0xffffff, size: 0.028, transparent: true, opacity: 0.45, sizeAttenuation: true });
+    scene.add(new THREE.Points(s1g, s1m));
 
-    const compileShader = (type, src) => {
-      const s = gl.createShader(type);
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      return s;
-    };
+    const s2n = isMobile ? 1500 : 4000;
+    const s2p = new Float32Array(s2n * 3);
+    for (let i = 0; i < s2n; i++) { s2p[i*3]=rng(-34,34); s2p[i*3+1]=rng(-80,80); s2p[i*3+2]=rng(-14,0); }
+    const s2g = new THREE.BufferGeometry(); s2g.setAttribute("position", new THREE.BufferAttribute(s2p, 3));
+    const s2m = new THREE.PointsMaterial({ color: 0x3b82f6, size: 0.06, transparent: true, opacity: 0.3, sizeAttenuation: true });
+    const blueCloud = new THREE.Points(s2g, s2m); scene.add(blueCloud);
 
-    const vs = compileShader(gl.VERTEX_SHADER, `
-      attribute vec2 p; void main(){gl_Position=vec4(p,0.,1.);}
-    `);
-    const fs = compileShader(gl.FRAGMENT_SHADER, `
-      precision highp float;
-      uniform float T;
-      uniform vec2 R;
-      uniform vec2 M;
+    const s3n = isMobile ? 800 : 2200;
+    const s3p = new Float32Array(s3n * 3);
+    for (let i = 0; i < s3n; i++) { s3p[i*3]=rng(-28,28); s3p[i*3+1]=rng(-70,70); s3p[i*3+2]=rng(-10,1); }
+    const s3g = new THREE.BufferGeometry(); s3g.setAttribute("position", new THREE.BufferAttribute(s3p, 3));
+    const s3m = new THREE.PointsMaterial({ color: 0x06b6d4, size: 0.045, transparent: true, opacity: 0.2, sizeAttenuation: true });
+    const cyanCloud = new THREE.Points(s3g, s3m); scene.add(cyanCloud);
 
-      float wave(vec2 uv,float fr,float sp,float am,float ph){
-        return am*sin(uv.x*fr+T*sp+ph)*cos(uv.y*fr*.65+T*sp*.55+ph*1.4);
-      }
+    const s4n = isMobile ? 500 : 1500;
+    const s4p = new Float32Array(s4n * 3);
+    for (let i = 0; i < s4n; i++) { s4p[i*3]=rng(-22,22); s4p[i*3+1]=rng(-65,65); s4p[i*3+2]=rng(-8,1); }
+    const s4g = new THREE.BufferGeometry(); s4g.setAttribute("position", new THREE.BufferAttribute(s4p, 3));
+    const s4m = new THREE.PointsMaterial({ color: 0x7c3aed, size: 0.055, transparent: true, opacity: 0.17, sizeAttenuation: true });
+    const violetCloud = new THREE.Points(s4g, s4m); scene.add(violetCloud);
 
-      void main(){
-        vec2 uv=gl_FragCoord.xy/R;
-        vec2 p=uv-.5; p.x*=R.x/R.y;
-        vec2 m=(M/R-.5); m.x*=R.x/R.y;
+    const nn = isMobile ? 45 : 90;
+    const npos = Array.from({ length: nn }, () => new THREE.Vector3(rng(-20,20), rng(-60,60), rng(-6,0)));
+    const npArr = new Float32Array(nn * 3);
+    npos.forEach((p, i) => { npArr[i*3]=p.x; npArr[i*3+1]=p.y; npArr[i*3+2]=p.z; });
+    const nGeo = new THREE.BufferGeometry(); nGeo.setAttribute("position", new THREE.BufferAttribute(npArr, 3));
+    const nMat = new THREE.PointsMaterial({ color: 0x60a5fa, size: 0.18, transparent: true, opacity: 0.7, sizeAttenuation: true });
+    scene.add(new THREE.Points(nGeo, nMat));
+    const edges = [];
+    for (let i = 0; i < nn; i++) for (let j = i+1; j < nn; j++) {
+      if (npos[i].distanceTo(npos[j]) < 8.5) { edges.push(npos[i].x, npos[i].y, npos[i].z, npos[j].x, npos[j].y, npos[j].z); }
+    }
+    const eGeo = new THREE.BufferGeometry(); eGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(edges), 3));
+    scene.add(new THREE.LineSegments(eGeo, new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.09 })));
 
-        float md=length(p-m);
-        float mw=.022*exp(-md*3.2)*sin(md*20.-T*5.);
+    const shooters = [];
+    const shootN = isMobile ? 8 : 20;
+    for (let i = 0; i < shootN; i++) {
+      const len = rng(2, 5);
+      const sg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(-len,-len*0.28,0)]);
+      const sl = new THREE.Line(sg, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: rng(0.2,0.6) }));
+      sl.position.set(rng(-20,22), rng(10,55), rng(-5,0));
+      sl.userData = { spd: rng(0.08,0.22), resetY: rng(15,65) };
+      scene.add(sl); shooters.push(sl);
+    }
 
-        float w=wave(uv,5.,0.5,0.03,0.)
-               +wave(uv,8.5,0.35,0.02,2.)
-               +wave(uv,13.,0.65,0.013,4.5)
-               +wave(uv,3.2,0.22,0.038,1.8)
-               +wave(uv,20.,1.0,0.008,3.2)
-               +wave(uv,28.,1.6,0.004,5.1)
-               +mw;
+    const dna1=[], dna2=[], rungs=[];
+    const dnaN=130;
+    for (let i=0; i<dnaN; i++) {
+      const t=(i/dnaN)*Math.PI*10, y=(i/dnaN)*50-25, r=1.1;
+      dna1.push(new THREE.Vector3(Math.cos(t)*r+6, y, Math.sin(t)*r-3));
+      dna2.push(new THREE.Vector3(Math.cos(t+Math.PI)*r+6, y, Math.sin(t+Math.PI)*r-3));
+      if (i%8===0) { rungs.push(dna1[i], dna2[i]); }
+    }
+    const dnaGroup = new THREE.Group();
+    dnaGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(dna1), new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.4 })));
+    dnaGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(dna2), new THREE.LineBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.4 })));
+    dnaGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(rungs), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.08 })));
+    scene.add(dnaGroup);
 
-        // Deep ocean colors
-        vec3 deep =vec3(0.005,0.018,0.06);
-        vec3 mid  =vec3(0.012,0.06, 0.2);
-        vec3 surf =vec3(0.025,0.15, 0.42);
-        vec3 crest=vec3(0.08, 0.42, 0.82);
-        vec3 foam =vec3(0.22, 0.68, 1.0);
+    const wires = [
+      { geo: new THREE.TorusKnotGeometry(1.7,0.4,160,32), col: 0x2563eb, op: 0.09, pos: [-6,7,-5] },
+      { geo: new THREE.IcosahedronGeometry(1.3,1), col: 0x06b6d4, op: 0.08, pos: [5.5,-7,-3] },
+      { geo: new THREE.OctahedronGeometry(1.4,1), col: 0x7c3aed, op: 0.07, pos: [-5,-16,-3] },
+      { geo: new THREE.DodecahedronGeometry(1.2,0), col: 0x06b6d4, op: 0.07, pos: [6,16,-4] },
+      { geo: new THREE.TorusGeometry(1.3,0.45,12,48), col: 0x2563eb, op: 0.08, pos: [4,28,-4] },
+    ];
+    const wireMeshes = wires.map(({ geo, col, op, pos }) => {
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: op }));
+      m.position.set(...pos); scene.add(m); return m;
+    });
 
-        float t=smoothstep(-.09,.09,w);
-        vec3 col=mix(deep,mid,smoothstep(.0,.32,t));
-        col=mix(col,surf,smoothstep(.28,.6,t));
-        col=mix(col,crest,smoothstep(.56,.78,t));
-        col=mix(col,foam,smoothstep(.75,.97,t));
+    const rings = [];
+    [[4,9,-5,0x3b82f6],[-5,-9,-4,0x06b6d4],[7,-22,-5,0x7c3aed],[-4,22,-4,0x2563eb],[3,-38,-5,0x06b6d4]].forEach(([x,y,z,col]) => {
+      const rg = new THREE.TorusGeometry(rng(0.7,1.2),0.035,8,44);
+      const ring = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: rng(0.14,0.28) }));
+      ring.position.set(x,y,z); ring.userData = { baseY: y, spd: rng(0.25,0.65), ph: rng(0,Math.PI*2) };
+      scene.add(ring); rings.push(ring);
+    });
 
-        // Caustic sparkle
-        float caus=pow(abs(sin(w*32.+T*2.2)),8.)*.055;
-        col+=caus*vec3(.15,.55,1.);
+    let mx=0, my=0;
+    const onMM = (e) => { mx=(e.clientX/W()-0.5)*2; my=-(e.clientY/window.innerHeight-0.5)*2; };
+    const onScroll = () => { camera.position.y=-(window.scrollY/Math.max(1,document.body.scrollHeight-window.innerHeight))*40; };
+    const onResize = () => { camera.aspect=W()/H(); camera.updateProjectionMatrix(); renderer.setSize(W(),H()); };
+    window.addEventListener("mousemove", onMM);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
 
-        // Subtle ripple lines
-        float rip=sin(w*60.+T*1.5)*.012+.012;
-        col+=rip*vec3(.1,.4,.9);
-
-        // Vignette depth
-        float vig=1.-smoothstep(.28,1.0,length(p*vec2(.85,1.15)));
-        col*=.5+.5*vig;
-
-        // Dark overlay — keep portfolio readable
-        col*=.32;
-        col+=vec3(0.,.003,.015);
-
-        gl_FragColor=vec4(col,1.);
-      }
-    `);
-
-    const prog = gl.createProgram();
-    gl.attachShader(prog, vs); gl.attachShader(prog, fs);
-    gl.linkProgram(prog); gl.useProgram(prog);
-
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
-    const ap = gl.getAttribLocation(prog, "p");
-    gl.enableVertexAttribArray(ap);
-    gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
-
-    const uT = gl.getUniformLocation(prog, "T");
-    const uR = gl.getUniformLocation(prog, "R");
-    const uM = gl.getUniformLocation(prog, "M");
-
-    let mouse = { x: 0, y: 0 };
-    const mm = e => { mouse = { x: e.clientX, y: canvas.height - e.clientY }; };
-    window.addEventListener("mousemove", mm);
-    window.addEventListener("touchmove", e => {
-      const t = e.touches[0];
-      mouse = { x: t.clientX, y: canvas.height - t.clientY };
-    }, { passive: true });
-
-    let time = 0, raf;
+    let t=0, raf;
     const tick = () => {
-      raf = requestAnimationFrame(tick);
-      time += 0.013;
-      gl.uniform1f(uT, time);
-      gl.uniform2f(uR, canvas.width, canvas.height);
-      gl.uniform2f(uM, mouse.x, mouse.y);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      raf = requestAnimationFrame(tick); t+=0.005;
+      blueCloud.rotation.y=t*0.03+mx*0.05; blueCloud.rotation.x=t*0.012+my*0.025;
+      cyanCloud.rotation.y=-t*0.022+mx*0.035;
+      violetCloud.rotation.y=t*0.018; violetCloud.rotation.z=t*0.007;
+      s1m.opacity=0.38+Math.sin(t*2.2)*0.1; s2m.opacity=0.22+Math.sin(t*1.5)*0.07;
+      const rs=[[0.003,0.005,0],[0.004,0,0.003],[0.003,0.002,0],[0.002,0.004,0],[0.002,0.003,0.002]];
+      const fo=[6,-6,-14,14,26];
+      wireMeshes.forEach((m,i) => {
+        m.rotation.x+=rs[i][0]; m.rotation.y+=rs[i][1]; m.rotation.z+=rs[i][2];
+        m.position.y=fo[i]+Math.sin(t*(0.4+i*0.07))*0.8;
+      });
+      dnaGroup.rotation.y=t*0.16;
+      rings.forEach((r) => {
+        r.rotation.x+=0.009; r.rotation.y+=0.007;
+        r.position.y=r.userData.baseY+Math.sin(t*r.userData.spd+r.userData.ph)*1.4;
+      });
+      shooters.forEach((s) => {
+        s.position.x-=s.userData.spd; s.position.y-=s.userData.spd*0.38;
+        if (s.position.x<-28||s.position.y<-65) { s.position.set(rng(14,26), s.userData.resetY, rng(-5,0)); }
+      });
+      renderer.render(scene, camera);
     };
     tick();
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", mm);
+      window.removeEventListener("mousemove", onMM);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      renderer.dispose();
     };
   }, []);
 
-  return <canvas ref={canvasRef} style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }} />;
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+      <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
+    </div>
+  );
+}
+
+/* ─── GLOW ORBS ───────────────────────────────────────────── */
+function GlowOrbs() {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "60vw", height: "60vw", borderRadius: "50%", background: `radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 65%)`, animation: "orbFloat1 18s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", top: "30%", right: "-15%", width: "50vw", height: "50vw", borderRadius: "50%", background: `radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 65%)`, animation: "orbFloat2 22s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", bottom: "10%", left: "30%", width: "40vw", height: "40vw", borderRadius: "50%", background: `radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 65%)`, animation: "orbFloat3 15s ease-in-out infinite" }} />
+    </div>
+  );
 }
 
 /* ─── SECTION WRAPPER ─────────────────────────────────────── */
 function Section({ id, children, style }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-50px" });
+  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
     <section id={id} ref={ref} style={{ position: "relative", zIndex: 1, ...style }}>
       <motion.div initial="hidden" animate={inView ? "visible" : "hidden"}>{children}</motion.div>
@@ -257,90 +414,150 @@ function Section({ id, children, style }) {
 /* ─── GLOW DIVIDER ────────────────────────────────────────── */
 function GlowDivider() {
   return (
-    <div style={{ position: "relative", height: 1, zIndex: 1, maxWidth: 1160, margin: "0 auto", padding: "0 20px" }}>
-      <div style={{ height: 1, background: `linear-gradient(90deg,transparent,${c.blue}80,${c.cyan}80,${c.violet}60,transparent)` }} />
-      <div style={{ position: "absolute", left: "20%", right: "20%", height: 16, top: -8, background: `radial-gradient(ellipse,${c.blue}38,transparent 70%)`, filter: "blur(8px)" }} />
+    <div style={{ position: "relative", height: 1, zIndex: 1, margin: "0 auto", maxWidth: 1200, padding: "0 clamp(16px,4vw,24px)" }}>
+      <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${c.blue}70, ${c.cyan}70, ${c.violet}55, transparent)` }} />
+      <div style={{ position: "absolute", left: "25%", right: "25%", height: 14, top: -7, background: `radial-gradient(ellipse, ${c.blue}30, transparent 70%)`, filter: "blur(6px)" }} />
     </div>
   );
+}
+
+function useScrollTo(setOpen) {
+  return (id) => {
+    setOpen && setOpen(false);
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY - 70;
+      window.scrollTo({ top, behavior: "smooth" });
+    }, 350);
+  };
 }
 
 /* ─── NAVBAR ──────────────────────────────────────────────── */
 function Navbar({ active }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const scrollTo = useScrollTo(setOpen);
+
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 28);
-    window.addEventListener("scroll", fn, { passive: true });
+    const fn = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", fn);
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const goto = id => {
-    setOpen(false);
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 66, behavior: "smooth" });
-    }, 260);
+  const navScrollTo = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 70, behavior: "smooth" });
   };
-  const links = ["home","skills","experience","projects","contact"];
+
+  const links = ["home", "skills", "experience", "projects", "contact"];
 
   return (
-    <motion.nav initial={{ y: -70, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? "rgba(2,8,16,0.88)" : "transparent", backdropFilter: scrolled ? "blur(28px) saturate(160%)" : "none", borderBottom: scrolled ? "1px solid rgba(59,130,246,0.1)" : "none", transition: "all 0.4s ease" }}>
-      <div style={{ maxWidth: 1160, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 66 }}>
-        <motion.div whileHover={{ scale: 1.03 }} onClick={() => goto("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
+    <motion.nav
+      initial={{ y: -80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+      style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: scrolled ? "rgba(3,9,18,0.85)" : "transparent",
+        backdropFilter: scrolled ? "blur(32px) saturate(180%)" : "none",
+        borderBottom: scrolled ? `1px solid rgba(59,130,246,0.12)` : "1px solid transparent",
+        transition: "all 0.5s ease"
+      }}>
+      {scrolled && <div style={{ position: "absolute", bottom: 0, left: "10%", right: "10%", height: 1, background: `linear-gradient(90deg, transparent, ${c.blue}40, transparent)` }} />}
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 clamp(16px,4vw,24px)", display: "flex", alignItems: "center", justifyContent: "space-between", height: 70 }}>
+        <motion.div whileHover={{ scale: 1.04 }} onClick={() => navScrollTo("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 11 }}>
           <div style={{ position: "relative" }}>
-            <div style={{ width: 38, height: 38, borderRadius: 11, background: `linear-gradient(135deg,${c.blue},${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, color: "#fff", fontFamily: "monospace", boxShadow: `0 0 20px ${c.blue}55` }}>SA</div>
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
-              style={{ position: "absolute", inset: -4, borderRadius: "50%", border: `1px dashed ${c.blue}45`, pointerEvents: "none" }} />
+            <div style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 900, fontSize: 14, color: "#fff", fontFamily: "monospace",
+              boxShadow: `0 0 24px ${c.blue}60`
+            }}>SA</div>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              style={{ position: "absolute", inset: -5, borderRadius: "50%", border: `1px dashed ${c.blue}45`, pointerEvents: "none" }}
+            />
           </div>
           <div>
-            <div style={{ color: c.text, fontWeight: 800, fontSize: 15, fontFamily: "'Syne',sans-serif", lineHeight: 1.1 }}>Shaikh Anis</div>
-            <div style={{ color: c.textDim, fontSize: 10, letterSpacing: "0.07em", fontWeight: 500, textTransform: "uppercase" }}>Full Stack · AI</div>
+            <div style={{ color: c.text, fontWeight: 800, fontSize: 16, letterSpacing: "-0.3px", fontFamily: "'Syne', sans-serif", lineHeight: 1.1 }}>Shaikh Anis</div>
+            <div style={{ color: c.textDim, fontSize: 11, letterSpacing: "0.06em", fontWeight: 500, textTransform: "uppercase" }}>Full Stack · AI</div>
           </div>
         </motion.div>
 
         <div className="nav-desktop" style={{ display: "flex", gap: 2, alignItems: "center" }}>
-          {links.map(s => (
-            <motion.button key={s} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }} onClick={() => goto(s)}
-              style={{ background: active===s?`${c.blue}18`:"none", border: active===s?`1px solid ${c.blue}40`:"1px solid transparent", cursor: "pointer", padding: "6px 14px", borderRadius: 8, color: active===s?c.blueBright:c.textMuted, fontWeight: active===s?700:400, fontSize: 13, transition: "all 0.2s", fontFamily: "inherit" }}>
-              {s.charAt(0).toUpperCase()+s.slice(1)}
+          {links.map((s) => (
+            <motion.button key={s} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} onClick={() => navScrollTo(s)}
+              style={{
+                background: active===s ? `${c.blue}18` : "none",
+                border: active===s ? `1px solid ${c.blue}40` : "1px solid transparent",
+                cursor: "pointer", padding: "7px 16px", borderRadius: 9,
+                color: active===s ? c.blueBright : c.textMuted,
+                fontWeight: active===s ? 700 : 400, fontSize: 14,
+                transition: "all 0.25s", fontFamily: "inherit",
+              }}>
+              {s.charAt(0).toUpperCase() + s.slice(1)}
             </motion.button>
           ))}
-          <motion.a href="mailto:shaikhaniscoder07@gmail.com" whileHover={{ scale: 1.05, boxShadow: `0 0 26px ${c.blue}70` }} whileTap={{ scale: 0.97 }}
-            style={{ marginLeft: 10, padding: "8px 20px", borderRadius: 10, background: `linear-gradient(135deg,${c.blue},${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none", display: "flex", alignItems: "center", gap: 6, boxShadow: `0 0 14px ${c.blue}35` }}>
-            <Sparkles size={12} /> Hire Me
+          <motion.a
+            href="mailto:shaikhaniscoder07@gmail.com"
+            whileHover={{ scale: 1.05, boxShadow: `0 0 32px ${c.blue}80` }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              marginLeft: 12, padding: "9px 24px", borderRadius: 11,
+              background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`,
+              color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none",
+              display: "flex", alignItems: "center", gap: 7,
+              boxShadow: `0 0 18px ${c.blue}40`,
+            }}>
+            <Sparkles size={13} /> Hire Me
           </motion.a>
         </div>
 
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => setOpen(!open)}
           className="nav-mobile-btn"
-          style={{ background: "none", border: `1px solid ${c.border}`, color: c.text, borderRadius: 8, padding: "7px 9px", cursor: "pointer", display: "none", alignItems: "center" }}>
+          style={{ background: open ? `${c.blue}18` : "none", border: `1px solid ${c.border}`, color: c.text, borderRadius: 9, padding: "8px 10px", cursor: "pointer", display: "none", alignItems: "center", justifyContent: "center" }}>
           <AnimatePresence mode="wait">
-            {open
-              ? <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><X size={17} /></motion.span>
-              : <motion.span key="m" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Menu size={17} /></motion.span>}
+            {open ? <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><X size={18} /></motion.span>
+                  : <motion.span key="m" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Menu size={18} /></motion.span>}
           </AnimatePresence>
         </motion.button>
       </div>
 
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            style={{ background: "rgba(2,8,16,0.97)", backdropFilter: "blur(24px)", borderTop: `1px solid ${c.border}`, overflow: "hidden" }}>
-            <div style={{ padding: "10px 20px 20px" }}>
+          <motion.div
+            initial={{ opacity: 0, height: 0, y: -10 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -10 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            style={{ background: "rgba(3,9,18,0.98)", backdropFilter: "blur(28px)", borderTop: `1px solid ${c.border}`, overflow: "hidden" }}>
+            <div style={{ padding: "12px 20px 24px" }}>
               {links.map((s, i) => (
-                <motion.button key={s} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                  onClick={() => goto(s)}
-                  style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", background: active===s?`${c.blue}14`:"none", border: "none", borderBottom: `1px solid ${c.border}`, color: active===s?c.blueBright:c.textMuted, padding: "14px 10px", fontSize: 15, fontWeight: active===s?700:400, cursor: "pointer", fontFamily: "inherit" }}>
-                  {active===s && <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.blueBright, display: "block", flexShrink: 0 }} />}
-                  <span>{s.charAt(0).toUpperCase()+s.slice(1)}</span>
-                  <ChevronRight size={13} style={{ marginLeft: "auto", opacity: 0.4 }} />
+                <motion.button key={s}
+                  initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  onClick={() => scrollTo(s)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 14, width: "100%",
+                    textAlign: "left", background: active===s ? `${c.blue}14` : "none",
+                    border: "none", borderBottom: `1px solid ${c.border}`,
+                    color: active===s ? c.blueBright : c.textMuted,
+                    padding: "15px 12px", fontSize: 15, fontWeight: active===s ? 700 : 400,
+                    cursor: "pointer", fontFamily: "inherit", borderRadius: active===s ? 10 : 0,
+                  }}>
+                  {active===s && <motion.span layoutId="mDot" style={{ width: 6, height: 6, borderRadius: "50%", background: c.blueBright, display: "block", flexShrink: 0 }} />}
+                  <span>{s.charAt(0).toUpperCase() + s.slice(1)}</span>
+                  <ChevronRight size={14} style={{ marginLeft: "auto", opacity: 0.4 }} />
                 </motion.button>
               ))}
-              <motion.a href="mailto:shaikhaniscoder07@gmail.com" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 16, padding: 14, borderRadius: 12, background: `linear-gradient(135deg,${c.blue},${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
-                <Sparkles size={13} /> Hire Me
+              <motion.a href="mailto:shaikhaniscoder07@gmail.com"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 18, padding: 16, borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: 15, textDecoration: "none", boxShadow: `0 0 24px ${c.blue}44` }}>
+                <Sparkles size={15} /> Hire Me
               </motion.a>
             </div>
           </motion.div>
@@ -353,15 +570,23 @@ function Navbar({ active }) {
 /* ─── TICKER ──────────────────────────────────────────────── */
 function Ticker() {
   return (
-    <div style={{ overflow: "hidden", borderTop: "1px solid rgba(59,130,246,0.1)", borderBottom: "1px solid rgba(59,130,246,0.1)", background: "rgba(37,99,235,0.03)", padding: "10px 0", position: "relative" }}>
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 56, background: `linear-gradient(90deg,${c.bg},transparent)`, zIndex: 1, pointerEvents: "none" }} />
-      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 56, background: `linear-gradient(270deg,${c.bg},transparent)`, zIndex: 1, pointerEvents: "none" }} />
-      <motion.div animate={{ x: ["0%","-50%"] }} transition={{ duration: 38, repeat: Infinity, ease: "linear" }}
+    <div style={{
+      overflow: "hidden",
+      borderTop: `1px solid rgba(59,130,246,0.12)`,
+      borderBottom: `1px solid rgba(59,130,246,0.12)`,
+      background: "rgba(37,99,235,0.03)",
+      padding: "13px 0", position: "relative"
+    }}>
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: `linear-gradient(90deg, ${c.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 80, background: `linear-gradient(270deg, ${c.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />
+      <motion.div
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ duration: 36, repeat: Infinity, ease: "linear" }}
         style={{ display: "flex", whiteSpace: "nowrap", width: "max-content" }}>
-        {[...TICKER_ITEMS,...TICKER_ITEMS].map((item,i) => (
-          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 9, paddingRight: 30, color: c.textMuted, fontSize: 10, fontWeight: 600, letterSpacing: "0.1em" }}>
-            <motion.span animate={{ opacity: [0.3,1,0.3] }} transition={{ duration: 2.5, repeat: Infinity, delay: i*0.07 }}>
-              <Zap size={8} color={i%2===0?c.blueBright:c.cyan} />
+        {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 12, paddingRight: 36, color: c.textMuted, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em" }}>
+            <motion.span animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.2, 1] }} transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.09 }}>
+              <Zap size={9} color={i % 2 === 0 ? c.blueBright : c.cyan} />
             </motion.span>
             {item.toUpperCase()}
           </span>
@@ -371,189 +596,273 @@ function Ticker() {
   );
 }
 
-/* ─── HERO ────────────────────────────────────────────────── */
-function Hero() {
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0,500], [0,80]);
-  const opacity = useTransform(scrollY, [0,420], [1,0]);
-  const [typed, setTyped] = useState("");
-  const roles = ["Full Stack Developer","Agentic AI Engineer","LangChain Expert","RAG Architect"];
-  const ri = useRef(0), ci = useRef(0), del = useRef(false);
-  useEffect(() => {
-    const iv = setInterval(() => {
-      const cur = roles[ri.current];
-      if (!del.current) {
-        if (ci.current < cur.length) setTyped(cur.slice(0, ++ci.current));
-        else setTimeout(() => { del.current = true; }, 1600);
-      } else {
-        if (ci.current > 0) setTyped(cur.slice(0, --ci.current));
-        else { del.current = false; ri.current = (ri.current+1)%roles.length; }
-      }
-    }, 52);
-    return () => clearInterval(iv);
-  }, []);
-
-  const socials = [
-    { href: "https://www.linkedin.com/in/shaikh-anis-s/", label: "LinkedIn", icon: <FaLinkedin size={13}/>, color: "#0a66c2", bg: "rgba(10,102,194,0.13)", border: "rgba(10,102,194,0.32)" },
-    { href: "https://leetcode.com/u/Shaikh_the_coder/", label: "LeetCode", icon: <Code2 size={13}/>, color: "#ffa116", bg: "rgba(255,161,22,0.1)", border: "rgba(255,161,22,0.3)" },
-    { href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity", label: "GFG", icon: <Cpu size={13}/>, color: "#2f8d46", bg: "rgba(47,141,70,0.1)", border: "rgba(47,141,70,0.3)" },
-    { href: "https://huggingface.co/ShaikhAnis007", label: "HuggingFace", icon: <Mic size={13}/>, color: c.cyan, bg: "rgba(6,182,212,0.1)", border: "rgba(6,182,212,0.3)" },
+/* ─── ORBITAL TAGS AROUND PROFILE CARD ───────────────────── */
+function OrbitalTags() {
+  const tags = [
+    { label: "⚡ FastAPI", radius: 180, speed: 14, startAngle: 0, color: c.blueBright },
+    { label: "🤖 AI Agents", radius: 200, speed: -18, startAngle: 90, color: c.cyan },
+    { label: "⚛️ React", radius: 165, speed: 22, startAngle: 180, color: c.violet },
+    { label: "🎙️ Whisper", radius: 195, speed: -12, startAngle: 270, color: c.blueBright },
   ];
 
   return (
-    <section id="home" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
-        background: "radial-gradient(ellipse 80% 60% at 18% 38%, rgba(37,99,235,0.11) 0%, transparent 60%), radial-gradient(ellipse 55% 45% at 82% 18%, rgba(6,182,212,0.07) 0%, transparent 60%)" }} />
-      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.016, pointerEvents: "none" }}>
-        <defs><pattern id="gr" width="52" height="52" patternUnits="userSpaceOnUse"><path d="M 52 0 L 0 0 0 52" fill="none" stroke={c.blueBright} strokeWidth="0.45"/></pattern></defs>
-        <rect width="100%" height="100%" fill="url(#gr)" />
-      </svg>
+    <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+      {tags.map(({ label, radius, speed, startAngle, color }, i) => (
+        <motion.div
+          key={label}
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transformOrigin: "0 0",
+          }}
+          animate={{ rotate: [startAngle, startAngle + 360] }}
+          transition={{ duration: Math.abs(speed), repeat: Infinity, ease: "linear" }}
+        >
+          <motion.div
+            style={{
+              position: "absolute",
+              left: radius,
+              top: 0,
+              transform: "translateY(-50%)",
+            }}
+            animate={{ rotate: [-(startAngle), -(startAngle + 360)] }}
+            transition={{ duration: Math.abs(speed), repeat: Infinity, ease: "linear" }}
+          >
+            <div style={{
+              background: "rgba(3,9,18,0.92)",
+              backdropFilter: "blur(16px)",
+              border: `1px solid ${color}45`,
+              borderRadius: 100,
+              padding: "6px 13px",
+              fontSize: 10,
+              color: c.textMuted,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              boxShadow: `0 6px 20px rgba(0,0,0,0.5), 0 0 14px ${color}22`,
+            }}>
+              {label}
+            </div>
+          </motion.div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── HERO ────────────────────────────────────────────────── */
+function Hero() {
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, [0, 500], [0, 90]);
+  const opacity = useTransform(scrollY, [0, 600], [1, 0]);
+  const [typed, setTyped] = useState("");
+  const roles = ["Full Stack Developer", "Agentic AI Engineer", "LangChain Expert", "RAG Architect"];
+  const roleRef = useRef(0);
+  const charRef = useRef(0);
+  const deletingRef = useRef(false);
+
+  /* 3D tilt for profile card */
+  const { ref: cardRef, transform: cardTransform, glowPos, handleMouseMove: cardMove, handleMouseLeave: cardLeave } = use3DCard(10);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const current = roles[roleRef.current];
+      if (!deletingRef.current) {
+        if (charRef.current < current.length) {
+          setTyped(current.slice(0, ++charRef.current));
+        } else {
+          setTimeout(() => { deletingRef.current = true; }, 1800);
+        }
+      } else {
+        if (charRef.current > 0) {
+          setTyped(current.slice(0, --charRef.current));
+        } else {
+          deletingRef.current = false;
+          roleRef.current = (roleRef.current + 1) % roles.length;
+        }
+      }
+    }, 55);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section id="home" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "visible" }}>
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+        <div style={{ position: "absolute", top: "-25%", left: "-10%", width: "min(900px,140vw)", height: "min(900px,140vw)", borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}14 0%, transparent 60%)` }} />
+        <div style={{ position: "absolute", top: "10%", right: "-18%", width: "min(700px,100vw)", height: "min(700px,100vw)", borderRadius: "50%", background: `radial-gradient(circle, ${c.cyan}09 0%, transparent 60%)` }} />
+        <div style={{ position: "absolute", bottom: "-5%", left: "35%", width: "min(500px,70vw)", height: "min(500px,70vw)", borderRadius: "50%", background: `radial-gradient(circle, ${c.violet}09 0%, transparent 60%)` }} />
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.025 }}>
+          <defs><pattern id="g" width="58" height="58" patternUnits="userSpaceOnUse"><path d="M 58 0 L 0 0 0 58" fill="none" stroke={c.blueBright} strokeWidth="0.5"/></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#g)" />
+        </svg>
+      </div>
 
       <motion.div style={{ y, opacity, flex: 1, display: "flex", alignItems: "center", position: "relative", zIndex: 1 }}>
         <div className="hero-grid" style={{
-          maxWidth: 1160, margin: "0 auto", width: "100%",
-          padding: "clamp(88px,12vw,118px) 20px clamp(24px,4vw,40px)",
-          display: "grid", gridTemplateColumns: "1fr 1fr",
-          gap: "clamp(20px,4vw,48px)", alignItems: "center",
+          maxWidth: 1200, margin: "0 auto",
+          padding: "clamp(80px,10vw,110px) clamp(16px,4vw,24px) clamp(20px,3vw,36px)",
+          width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr",
+          gap: "clamp(24px,4vw,50px)", alignItems: "center"
         }}>
-          {/* ── LEFT ── */}
-          <div style={{ minWidth: 0 }}>
-            {/* Mobile available */}
+          {/* LEFT */}
+          <div>
             <motion.div className="avail-mobile" custom={0} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "none", alignItems: "center", gap: 7, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: 100, padding: "5px 13px", marginBottom: 12, width: "fit-content" }}>
-              <motion.span animate={{ opacity:[1,.2,1], scale:[1,1.3,1] }} transition={{ duration: 2, repeat: Infinity }}
+              style={{ display: "none", alignItems: "center", gap: 8, background: `rgba(34,197,94,0.08)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: 100, padding: "6px 14px", marginBottom: 14, width: "fit-content" }}>
+              <motion.span animate={{ opacity: [1,0.3,1], scale: [1,1.3,1] }} transition={{ duration: 2, repeat: Infinity }}
                 style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 10px #22c55e", display: "block" }} />
-              <span style={{ color: "#22c55e", fontSize: 11, fontWeight: 600 }}>Available for opportunities</span>
+              <span style={{ color: "#22c55e", fontSize: 12, fontWeight: 600 }}>Available for opportunities</span>
             </motion.div>
 
             <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "inline-flex", alignItems: "center", gap: 7, background: `${c.blue}13`, border: `1px solid ${c.blue}30`, borderRadius: 100, padding: "5px 14px", marginBottom: 12 }}>
-              <motion.span animate={{ rotate: 360 }} transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}><Cpu size={11} color={c.cyan}/></motion.span>
-              <span style={{ color: c.textMuted, fontSize: 11, fontWeight: 500 }}>Full Stack & Agentic AI Developer</span>
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${c.blue}14`, border: `1px solid ${c.blue}35`, borderRadius: 100, padding: "6px 16px", marginBottom: 14 }}>
+              <motion.span animate={{ rotate: 360 }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }}><Cpu size={12} color={c.cyan} /></motion.span>
+              <span style={{ color: c.textMuted, fontSize: 12, fontWeight: 500 }}>Full Stack & Agentic AI Developer</span>
             </motion.div>
 
             <motion.h1 custom={1} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ fontSize: "clamp(34px,5.8vw,70px)", fontWeight: 900, lineHeight: 0.94, letterSpacing: "-2px", color: c.text, marginBottom: 10, fontFamily: "'Syne',sans-serif" }}>
-              Shaikh<br/>
-              <span style={{ background: `linear-gradient(135deg,${c.blueBright} 0%,${c.cyan} 45%,${c.violet} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Anis.</span>
+              style={{ fontSize: "clamp(38px,6.5vw,72px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-2.5px", color: c.text, marginBottom: 12, fontFamily: "'Syne', sans-serif" }}>
+              Shaikh<br />
+              <span style={{ background: `linear-gradient(135deg, ${c.blueBright} 0%, ${c.cyan} 45%, ${c.violet} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Anis.</span>
             </motion.h1>
 
             <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ fontSize: "clamp(12px,1.5vw,15px)", fontWeight: 700, color: c.cyan, marginBottom: 10, minHeight: 20, fontFamily: "'Syne',sans-serif", display: "flex", alignItems: "center", gap: 3 }}>
+              style={{ fontSize: "clamp(13px,1.8vw,17px)", fontWeight: 700, color: c.cyan, marginBottom: 10, height: 26, fontFamily: "'Syne', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
               {typed}
-              <motion.span animate={{ opacity: [1,0,1] }} transition={{ duration: 0.85, repeat: Infinity }}
-                style={{ display: "inline-block", width: 2, height: "1em", background: c.cyan, borderRadius: 1 }} />
+              <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 0.9, repeat: Infinity }} style={{ display: "inline-block", width: 2, height: "1em", background: c.cyan, borderRadius: 1 }} />
             </motion.div>
 
             <motion.p custom={3} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ fontSize: "clamp(11px,1.3vw,13px)", color: c.textDim, lineHeight: 1.78, marginBottom: 10, maxWidth: 420 }}>
+              style={{ fontSize: "clamp(12px,1.4vw,14px)", color: c.textDim, lineHeight: 1.7, marginBottom: 12, maxWidth: 440 }}>
               Building scalable applications and intelligent AI systems using React, FastAPI, LangChain & RAG pipelines.
             </motion.p>
 
             <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 14, flexWrap: "wrap" }}>
-              <MapPin size={11} color={c.textDim}/><span style={{ color: c.textDim, fontSize: 11 }}>Coimbatore, India</span>
-              <span style={{ color: c.textDim, opacity: 0.4 }}>·</span>
-              <Calendar size={11} color={c.textDim}/><span style={{ color: c.textDim, fontSize: 11 }}>B.E. CSE · 2026</span>
+              style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 14 }}>
+              <MapPin size={13} color={c.textDim} />
+              <span style={{ color: c.textDim, fontSize: 12 }}>Coimbatore, India</span>
+              <span style={{ color: c.textDim, fontSize: 12, marginLeft: 2 }}>·</span>
+              <Calendar size={13} color={c.textDim} style={{ marginLeft: 2 }} />
+              <span style={{ color: c.textDim, fontSize: 12 }}>B.E. CSE · 2026</span>
             </motion.div>
 
-            {/* ── SOCIALS ROW ── */}
             <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-              <span style={{ color: c.textDim, fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Find me</span>
-              {socials.map(({ href, label, icon, color, bg, border }) => (
+              style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>
+              <span style={{ color: c.textDim, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 2 }}>Find me on</span>
+              {[
+                { href: "https://www.linkedin.com/in/shaikh-anis-s/", label: "LinkedIn", icon: <FaLinkedin size={13} />, color: "#0a66c2", bg: "rgba(10,102,194,0.12)", border: "rgba(10,102,194,0.3)" },
+                { href: "https://leetcode.com/u/Shaikh_the_coder/", label: "LeetCode", icon: <Code2 size={13} />, color: "#ffa116", bg: "rgba(255,161,22,0.1)", border: "rgba(255,161,22,0.28)" },
+                { href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity", label: "GFG", icon: <Cpu size={13} />, color: "#2f8d46", bg: "rgba(47,141,70,0.1)", border: "rgba(47,141,70,0.28)" },
+                { href: "https://huggingface.co/ShaikhAnis007", label: "HuggingFace", icon: <Mic size={13} />, color: c.cyan, bg: `rgba(6,182,212,0.1)`, border: `rgba(6,182,212,0.28)` },
+              ].map(({ href, label, icon, color, bg, border }) => (
                 <motion.a key={label} href={href} target="_blank" rel="noreferrer"
-                  whileHover={{ scale: 1.08, y: -2, boxShadow: `0 5px 14px ${color}28` }} whileTap={{ scale: 0.93 }}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 11px", borderRadius: 8, background: bg, border: `1px solid ${border}`, color, fontWeight: 600, fontSize: 11, textDecoration: "none", backdropFilter: "blur(8px)", whiteSpace: "nowrap" }}>
-                  {icon}<span className="soc-label">{label}</span>
+                  whileHover={{ scale: 1.08, y: -2, boxShadow: `0 6px 18px ${color}30` }}
+                  whileTap={{ scale: 0.95 }}
+                  title={label}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 9, background: bg, border: `1px solid ${border}`, color, fontWeight: 600, fontSize: 11, textDecoration: "none", transition: "all 0.25s", backdropFilter: "blur(10px)" }}>
+                  {icon}
+                  <span className="social-label">{label}</span>
                 </motion.a>
               ))}
             </motion.div>
 
-            {/* ── STATS ── */}
             <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", gap: "clamp(12px,3vw,32px)", marginBottom: 18, flexWrap: "wrap" }}>
-              {[["500+","DSA Problems",c.blueBright],["4+","Projects",c.cyan],["8.6","CGPA",c.violet]].map(([num,label,col]) => (
-                <motion.div key={label} whileHover={{ y: -3 }}>
-                  <div style={{ fontSize: "clamp(20px,3vw,30px)", fontWeight: 900, letterSpacing: "-0.8px", color: col, textShadow: `0 0 18px ${col}55`, fontFamily: "'Syne',sans-serif" }}>{num}</div>
-                  <div style={{ fontSize: 9, color: c.textDim, marginTop: 1, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div>
+              style={{ display: "flex", gap: "clamp(16px,3vw,36px)", marginBottom: 20, flexWrap: "wrap" }}>
+              {[["500+", "DSA Problems", c.blueBright], ["4+", "Projects", c.cyan], ["8.6", "CGPA", c.violet]].map(([num, label, col]) => (
+                <motion.div key={label} whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
+                  <div style={{ fontSize: "clamp(22px,3.5vw,32px)", fontWeight: 900, letterSpacing: "-1px", color: col, textShadow: `0 0 22px ${col}60`, fontFamily: "'Syne', sans-serif" }}>{num}</div>
+                  <div style={{ fontSize: 10, color: c.textDim, marginTop: 2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div>
                 </motion.div>
               ))}
             </motion.div>
 
-            {/* ── CTAs ── */}
             <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible"
-              style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+              style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <motion.a href="mailto:shaikhaniscoder07@gmail.com"
-                whileHover={{ scale: 1.04, boxShadow: `0 0 34px ${c.blue}75` }} whileTap={{ scale: 0.97 }}
-                style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 24px", borderRadius: 11, background: `linear-gradient(135deg,${c.blue},${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: "clamp(11px,1.3vw,13px)", textDecoration: "none", boxShadow: `0 0 18px ${c.blue}45` }}>
-                <Mail size={13}/> Contact Me
+                whileHover={{ scale: 1.04, boxShadow: `0 0 40px ${c.blue}80` }}
+                whileTap={{ scale: 0.97 }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 12, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: "clamp(12px,1.4vw,14px)", textDecoration: "none", boxShadow: `0 0 22px ${c.blue}50` }}>
+                <Mail size={14} /> Contact Me
               </motion.a>
               <motion.a href="https://github.com/Shaikhanis7" target="_blank" rel="noreferrer"
-                whileHover={{ scale: 1.04, borderColor: `${c.blue}70` }} whileTap={{ scale: 0.97 }}
-                style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 24px", borderRadius: 11, background: "transparent", border: `1px solid ${c.border}`, color: c.text, fontWeight: 700, fontSize: "clamp(11px,1.3vw,13px)", textDecoration: "none", backdropFilter: "blur(10px)" }}>
-                <GitBranch size={13}/> GitHub
+                whileHover={{ scale: 1.04, borderColor: `${c.blue}80` }}
+                whileTap={{ scale: 0.97 }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 12, background: "transparent", border: `1px solid ${c.border}`, color: c.text, fontWeight: 700, fontSize: "clamp(12px,1.4vw,14px)", textDecoration: "none", transition: "border-color 0.25s" }}>
+                <GitBranch size={14} /> GitHub
               </motion.a>
             </motion.div>
           </div>
 
-          {/* ── RIGHT: profile card ── */}
+          {/* RIGHT: Profile card with 3D + orbital tags */}
           <motion.div className="hero-card" custom={3} variants={scaleIn} initial="hidden" animate="visible"
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-            <motion.div animate={{ y: [-8,8,-8] }} transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-              style={{ position: "relative", padding: "24px 100px 24px" }}>
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
+            <motion.div animate={{ y: [-8, 8, -8] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              style={{ position: "relative", padding: "28px 110px 28px" }}>
 
-              {[290,240,196].map((sz,i) => (
-                <motion.div key={sz}
-                  animate={{ rotate: i%2===0?360:-360 }}
-                  transition={{ duration: [26,18,13][i], repeat: Infinity, ease: "linear" }}
-                  style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: sz, height: sz, borderRadius: "50%", border: `1px ${i===1?"solid":"dashed"} rgba(${i===0?"59,130,246":i===1?"6,182,212":"124,58,237"},0.2)`, pointerEvents: "none" }} />
+              {/* Orbital ring lines (decorative) */}
+              {[310, 260, 214].map((size, i) => (
+                <motion.div key={size}
+                  animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
+                  transition={{ duration: [28, 20, 14][i], repeat: Infinity, ease: "linear" }}
+                  style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: size, height: size, borderRadius: "50%", border: `1px ${i === 1 ? "solid" : "dashed"} rgba(${i===0?'59,130,246':i===1?'6,182,212':'124,58,237'},0.18)`, pointerEvents: "none" }} />
               ))}
 
-              <div style={{ width: "clamp(188px,21vw,248px)", borderRadius: 22, background: c.glass, backdropFilter: "blur(22px)", border: "1px solid rgba(59,130,246,0.2)", boxShadow: `0 0 90px ${c.blue}1e, 0 36px 56px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.055)`, padding: "clamp(18px,2.5vw,28px)", textAlign: "center", position: "relative" }}>
-                {/* shimmer */}
-                <div style={{ position: "absolute", inset: 0, borderRadius: 22, overflow: "hidden", pointerEvents: "none" }}>
-                  <motion.div animate={{ x: ["-100%","220%"] }} transition={{ duration: 4, repeat: Infinity, repeatDelay: 3.5 }}
-                    style={{ position: "absolute", top: 0, left: 0, width: "45%", height: "100%", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.044),transparent)" }} />
-                </div>
-                {/* avatar */}
-                <div style={{ position: "relative", width: 68, height: 68, margin: "0 auto 12px" }}>
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
-                    style={{ position: "absolute", inset: -4, borderRadius: "50%", background: `conic-gradient(${c.blue},${c.cyan},${c.violet},${c.blue})`, opacity: 0.75 }} />
-                  <div style={{ position: "relative", width: 68, height: 68, borderRadius: "50%", background: `linear-gradient(135deg,${c.blue},${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "monospace", zIndex: 1, boxShadow: `0 0 34px ${c.blue}65` }}>SA</div>
-                </div>
-                <p style={{ color: c.text, fontWeight: 800, fontSize: 16, marginBottom: 2, fontFamily: "'Syne',sans-serif" }}>Shaikh Anis</p>
-                <p style={{ color: c.textDim, fontSize: 11, marginBottom: 3 }}>B.E. CSE · SKCT · 2026</p>
-                <p style={{ color: c.textDim, fontSize: 10, marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
-                  <MapPin size={9}/> Coimbatore, India
-                </p>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: `${c.blue}22`, border: `1px solid ${c.blue}45`, borderRadius: 100, padding: "5px 13px" }}>
-                  <Award size={11} color={c.blueBright}/>
-                  <span style={{ color: c.blueBright, fontSize: 10, fontWeight: 700 }}>NPTEL Topper</span>
+              {/* Orbiting tags */}
+              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 0, height: 0, pointerEvents: "none" }}>
+                <OrbitalTags />
+              </div>
+
+              {/* 3D Profile Card */}
+              <div
+                ref={cardRef}
+                onMouseMove={cardMove}
+                onMouseLeave={cardLeave}
+                style={{
+                  width: "clamp(200px,22vw,260px)", borderRadius: 24,
+                  background: c.glass, backdropFilter: "blur(24px)",
+                  border: `1px solid rgba(59,130,246,0.22)`,
+                  boxShadow: `0 0 100px ${c.blue}22, 0 40px 70px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)`,
+                  padding: "clamp(18px,2.5vw,28px)", textAlign: "center", position: "relative",
+                  transform: cardTransform,
+                  transition: "transform 0.12s ease-out",
+                  transformStyle: "preserve-3d",
+                }}>
+                {/* Dynamic glow */}
+                <div style={{
+                  position: "absolute", inset: 0, borderRadius: 24, pointerEvents: "none",
+                  background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, rgba(37,99,235,0.15) 0%, transparent 65%)`,
+                  transition: "background 0.1s ease",
+                }} />
+
+                <div style={{ position: "absolute", inset: 0, borderRadius: 24, overflow: "hidden", pointerEvents: "none" }}>
+                  <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+                    style={{ position: "absolute", top: 0, left: 0, width: "50%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)" }} />
                 </div>
 
-                {/* floating tags — outside card overflow */}
-                {[
-                  { label:"⚡ FastAPI",  s:{ left:-96,  top:"16%"    } },
-                  { label:"🤖 Agents",   s:{ right:-100, top:"36%"   } },
-                  { label:"⚛️ React",    s:{ left:-86,  bottom:"26%" } },
-                  { label:"🎙️ Whisper",  s:{ right:-94, bottom:"12%" } },
-                ].map(({ label, s }, i) => (
-                  <motion.div key={label}
-                    animate={{ y:[0,-7,0] }}
-                    transition={{ duration: 3.3+i*.6, repeat: Infinity, delay: i*.5 }}
-                    style={{ position: "absolute", ...s, background: "rgba(2,8,20,0.9)", backdropFilter: "blur(14px)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 100, padding: "5px 11px", fontSize: 9, color: c.textMuted, fontWeight: 600, whiteSpace: "nowrap", boxShadow: `0 5px 16px rgba(0,0,0,0.5), 0 0 12px ${c.blue}22`, zIndex: 10 }}>
-                    {label}
-                  </motion.div>
-                ))}
+                <div style={{ position: "relative", width: 72, height: 72, margin: "0 auto 14px" }}>
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                    style={{ position: "absolute", inset: -5, borderRadius: "50%", background: `conic-gradient(${c.blue}, ${c.cyan}, ${c.violet}, ${c.blue})`, opacity: 0.7 }} />
+                  <div style={{ position: "relative", width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 900, color: "#fff", boxShadow: `0 0 40px ${c.blue}70`, fontFamily: "monospace", zIndex: 1 }}>SA</div>
+                </div>
+
+                <p style={{ color: c.text, fontWeight: 800, fontSize: 17, marginBottom: 3, fontFamily: "'Syne', sans-serif" }}>Shaikh Anis</p>
+                <p style={{ color: c.textDim, fontSize: 12, marginBottom: 4 }}>B.E. CSE · SKCT · 2026</p>
+                <p style={{ color: c.textDim, fontSize: 11, marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  <MapPin size={10} /> Coimbatore, India
+                </p>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: `${c.blue}22`, border: `1px solid ${c.blue}45`, borderRadius: 100, padding: "6px 14px" }}>
+                  <Award size={12} color={c.blueBright} />
+                  <span style={{ color: c.blueBright, fontSize: 11, fontWeight: 700 }}>NPTEL Topper</span>
+                </div>
               </div>
             </motion.div>
 
-            <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:1.1, duration:0.6 }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.24)", borderRadius: 100, padding: "7px 15px" }}>
-              <motion.span animate={{ opacity:[1,.2,1], scale:[1,1.3,1] }} transition={{ duration:2, repeat:Infinity }}
-                style={{ width:7, height:7, borderRadius:"50%", background:"#22c55e", boxShadow:"0 0 10px #22c55e", display:"block", flexShrink:0 }} />
-              <span style={{ color:"#22c55e", fontSize:11, fontWeight:700 }}>Available for opportunities</span>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2, duration: 0.7 }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(34,197,94,0.07)", border: `1px solid rgba(34,197,94,0.25)`, borderRadius: 100, padding: "8px 18px" }}>
+              <motion.span animate={{ opacity: [1,0.2,1], scale: [1,1.3,1] }} transition={{ duration: 2, repeat: Infinity }}
+                style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 12px #22c55e", display: "block", flexShrink: 0 }} />
+              <span style={{ color: "#22c55e", fontSize: 12, fontWeight: 700 }}>Available for opportunities</span>
             </motion.div>
           </motion.div>
         </div>
@@ -566,48 +875,62 @@ function Hero() {
 /* ─── SKILLS ──────────────────────────────────────────────── */
 function Skills() {
   return (
-    <Section id="skills" style={{ padding: "clamp(68px,9vw,108px) 0" }}>
+    <Section id="skills" style={{ padding: "clamp(80px,10vw,120px) 0" }}>
       <GlowDivider />
-      <div style={{ maxWidth:1160, margin:"0 auto", padding:"clamp(40px,6vw,76px) 20px 0" }}>
-        <motion.div variants={fadeUp} custom={0} style={{ textAlign:"center", marginBottom:"clamp(36px,5vw,62px)" }}>
-          <p style={{ color:c.cyan, fontSize:10, fontWeight:700, letterSpacing:"0.26em", textTransform:"uppercase", marginBottom:11 }}>What I Work With</p>
-          <h2 style={{ fontSize:"clamp(26px,4.8vw,54px)", fontWeight:900, color:c.text, letterSpacing:"-1.5px", fontFamily:"'Syne',sans-serif" }}>
-            Technical <span style={{ background:`linear-gradient(135deg,${c.blueBright},${c.cyan})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>Arsenal</span>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(50px,6vw,90px) clamp(16px,4vw,24px) 0" }}>
+        <motion.div variants={fadeUp} custom={0} style={{ textAlign: "center", marginBottom: "clamp(50px,7vw,80px)" }}>
+          <motion.p style={{ color: c.cyan, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 14 }}>What I Work With</motion.p>
+          <h2 style={{ fontSize: "clamp(30px,5.5vw,62px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>
+            Technical{" "}
+            <span style={{ background: `linear-gradient(135deg, ${c.blueBright}, ${c.cyan})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Arsenal</span>
           </h2>
         </motion.div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,240px),1fr))", gap:"clamp(11px,1.6vw,17px)" }}>
-          {SKILLS.map((g,i) => (
-            <motion.div key={g.category} custom={i} variants={fadeUp}
-              whileHover={{ y:-7, borderColor:`${g.accent}62`, boxShadow:`0 0 32px ${g.accent}14` }}
-              style={{ background:c.glass, backdropFilter:"blur(14px)", border:"1px solid rgba(59,130,246,0.11)", borderRadius:17, padding:"clamp(14px,2.2vw,22px)", transition:"all 0.3s ease", position:"relative", overflow:"hidden" }}>
-              <div style={{ position:"absolute", top:-22, right:-22, width:72, height:72, borderRadius:"50%", background:`${g.accent}06`, pointerEvents:"none" }} />
-              <div style={{ display:"flex", alignItems:"center", gap:11, marginBottom:13 }}>
-                <div style={{ width:38, height:38, borderRadius:10, background:`linear-gradient(135deg,${g.accent}26,${g.accent}12)`, border:`1px solid ${g.accent}26`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                  <g.Icon size={18} color={g.accent}/>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,270px), 1fr))", gap: "clamp(14px,2vw,20px)" }}>
+          {SKILLS.map((group, i) => (
+            <motion.div key={group.category} custom={i} variants={fadeUp}>
+              <Card3D
+                accentColor={group.accent}
+                intensity={10}
+                style={{
+                  background: c.glass, backdropFilter: "blur(16px)",
+                  border: `1px solid rgba(59,130,246,0.13)`,
+                  borderRadius: 20, padding: "clamp(18px,3vw,26px)",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.2)",
+                  height: "100%",
+                }}
+              >
+                <div style={{ position: "absolute", top: -30, right: -30, width: 100, height: 100, borderRadius: "50%", background: `${group.accent}08`, pointerEvents: "none" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 18 }}>
+                  <div style={{ width: 46, height: 46, borderRadius: 13, background: `linear-gradient(135deg, ${group.accent}28, ${group.accent}14)`, border: `1px solid ${group.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <group.Icon size={21} color={group.accent} />
+                  </div>
+                  <span style={{ color: c.text, fontWeight: 700, fontSize: 15, fontFamily: "'Syne', sans-serif" }}>{group.category}</span>
                 </div>
-                <span style={{ color:c.text, fontWeight:700, fontSize:13, fontFamily:"'Syne',sans-serif" }}>{g.category}</span>
-              </div>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                {g.items.map(item => (
-                  <motion.span key={item} whileHover={{ scale:1.08, background:`${g.accent}24` }}
-                    style={{ background:`${g.accent}0f`, border:`1px solid ${g.accent}1e`, borderRadius:6, padding:"4px 9px", color:c.textMuted, fontSize:11, fontWeight:500, transition:"background 0.2s" }}>
-                    {item}
-                  </motion.span>
-                ))}
-              </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                  {group.items.map((item) => (
+                    <motion.span key={item} whileHover={{ scale: 1.1, background: `${group.accent}28`, y: -2 }}
+                      style={{ background: `${group.accent}10`, border: `1px solid ${group.accent}22`, borderRadius: 8, padding: "5px 12px", color: c.textMuted, fontSize: 12, fontWeight: 500, cursor: "default", transition: "background 0.2s", display: "inline-block" }}>
+                      {item}
+                    </motion.span>
+                  ))}
+                </div>
+              </Card3D>
             </motion.div>
           ))}
         </div>
-        <motion.div variants={fadeUp} custom={7} style={{ display:"flex", flexWrap:"wrap", gap:8, justifyContent:"center", marginTop:"clamp(26px,4vw,46px)" }}>
+
+        {/* Certs */}
+        <motion.div variants={fadeUp} custom={7} style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: "clamp(36px,5vw,60px)" }}>
           {[
-            { icon:<Award size={11}/>, label:"NPTEL Student Topper — SKCT", col:c.blueBright },
-            { icon:<Star size={11}/>, label:"Google Data Analytics — Coursera", col:c.cyan },
-            { icon:<Cpu size={11}/>, label:"Advanced React — Coursera", col:c.violet },
-            { icon:<Code2 size={11}/>, label:"Java — NPTEL Certified", col:c.blueBright },
-            { icon:<Mic size={11}/>, label:"Hindi STT — HuggingFace Published", col:c.cyan },
-          ].map(({ icon,label,col }) => (
-            <motion.div key={label} whileHover={{ scale:1.05, borderColor:col, boxShadow:`0 0 13px ${col}26` }}
-              style={{ display:"inline-flex", alignItems:"center", gap:7, background:c.glass, backdropFilter:"blur(10px)", border:`1px solid ${c.border}`, borderRadius:100, padding:"7px 14px", color:col, fontSize:11, fontWeight:600, transition:"all 0.22s" }}>
+            { icon: <Award size={13} />, label: "NPTEL Student Topper — SKCT", col: c.blueBright },
+            { icon: <Star size={13} />, label: "Google Data Analytics — Coursera", col: c.cyan },
+            { icon: <Cpu size={13} />, label: "Advanced React — Coursera", col: c.violet },
+            { icon: <Code2 size={13} />, label: "Java — NPTEL Certified", col: c.blueBright },
+            { icon: <Mic size={13} />, label: "Hindi STT — HuggingFace Published", col: c.cyan },
+          ].map(({ icon, label, col }) => (
+            <motion.div key={label} whileHover={{ scale: 1.05, borderColor: col, boxShadow: `0 0 18px ${col}30`, y: -3 }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, background: c.glass, backdropFilter: "blur(12px)", border: `1px solid ${c.border}`, borderRadius: 100, padding: "9px 18px", color: col, fontSize: 12, fontWeight: 600, transition: "all 0.25s" }}>
               {icon} {label}
             </motion.div>
           ))}
@@ -619,74 +942,103 @@ function Skills() {
 
 /* ─── EXPERIENCE ──────────────────────────────────────────── */
 function Experience() {
+  const { ref, transform, glowPos, handleMouseMove, handleMouseLeave } = use3DCard(6);
+
   return (
-    <Section id="experience" style={{ padding:"clamp(68px,9vw,108px) 0" }}>
+    <Section id="experience" style={{ padding: "clamp(80px,10vw,120px) 0" }}>
       <GlowDivider />
-      <div style={{ maxWidth:1160, margin:"0 auto", padding:"clamp(40px,6vw,76px) 20px 0" }}>
-        <motion.div variants={fadeUp} custom={0} style={{ marginBottom:"clamp(32px,5vw,56px)" }}>
-          <p style={{ color:c.cyan, fontSize:10, fontWeight:700, letterSpacing:"0.26em", textTransform:"uppercase", marginBottom:11 }}>Work History</p>
-          <h2 style={{ fontSize:"clamp(26px,4.8vw,54px)", fontWeight:900, color:c.text, letterSpacing:"-1.5px", fontFamily:"'Syne',sans-serif" }}>Experience</h2>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(50px,6vw,90px) clamp(16px,4vw,24px) 0" }}>
+        <motion.div variants={fadeUp} custom={0} style={{ marginBottom: "clamp(44px,6vw,72px)" }}>
+          <p style={{ color: c.cyan, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 14 }}>Work History</p>
+          <h2 style={{ fontSize: "clamp(30px,5.5vw,62px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>Experience</h2>
         </motion.div>
 
-        <motion.div custom={1} variants={fadeUp}
-          whileHover={{ borderColor:`${c.blue}45`, boxShadow:`0 0 45px ${c.blue}10, 0 28px 55px rgba(0,0,0,0.2)` }}
-          style={{ background:c.glass, backdropFilter:"blur(18px)", border:"1px solid rgba(59,130,246,0.13)", borderRadius:21, padding:"clamp(18px,3.2vw,38px)", marginBottom:18, position:"relative", overflow:"hidden", transition:"all 0.4s ease" }}>
-          <div style={{ position:"absolute", top:0, left:0, width:3, height:"100%", background:`linear-gradient(180deg,${c.blue},${c.cyan},${c.violet})`, borderRadius:"3px 0 0 3px" }} />
-          <motion.div animate={{ x:["-100%","220%"] }} transition={{ duration:5, repeat:Infinity, repeatDelay:4 }}
-            style={{ position:"absolute", top:0, left:0, width:"34%", height:"100%", background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.025),transparent)", pointerEvents:"none" }} />
+        <motion.div custom={1} variants={fadeUp}>
+          <div
+            ref={ref}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{
+              background: c.glass, backdropFilter: "blur(20px)",
+              border: `1px solid rgba(59,130,246,0.15)`,
+              borderRadius: 26, padding: "clamp(24px,4vw,44px)",
+              marginBottom: 24, position: "relative", overflow: "hidden",
+              transform, transition: "transform 0.12s ease-out",
+              transformStyle: "preserve-3d",
+              boxShadow: "0 4px 30px rgba(0,0,0,0.2)",
+            }}>
+            {/* 3D glow follow */}
+            <div style={{ position: "absolute", inset: 0, borderRadius: 26, pointerEvents: "none", background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, rgba(37,99,235,0.12) 0%, transparent 60%)`, transition: "background 0.1s ease" }} />
 
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:13, marginBottom:22 }}>
-            <div style={{ display:"flex", gap:"clamp(10px,1.8vw,15px)", alignItems:"center" }}>
-              <motion.div whileHover={{ scale:1.08, rotate:4 }}
-                style={{ width:50, height:50, borderRadius:14, background:`linear-gradient(135deg,${c.blue},${c.blueGlow})`, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:15, color:"#fff", flexShrink:0, boxShadow:`0 0 25px ${c.blue}45`, fontFamily:"monospace" }}>GW</motion.div>
-              <div>
-                <h3 style={{ color:c.text, fontWeight:800, fontSize:"clamp(13px,2vw,17px)", marginBottom:3, lineHeight:1.3, fontFamily:"'Syne',sans-serif" }}>Agentic AI Full Stack Developer Trainee</h3>
-                <p style={{ color:c.textMuted, fontSize:12 }}>Genworx.ai · Chennai, India</p>
-              </div>
-            </div>
-            <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-              <span style={{ background:`${c.blue}22`, border:`1px solid ${c.blue}40`, color:c.blueBright, borderRadius:100, padding:"4px 13px", fontSize:11, fontWeight:700 }}>Internship</span>
-              <span style={{ color:c.textDim, fontSize:11, display:"flex", alignItems:"center", gap:3 }}><Calendar size={10}/> Aug 2025 – Feb 2026</span>
-            </div>
-          </div>
+            <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: `linear-gradient(180deg, ${c.blue}, ${c.cyan}, ${c.violet})`, borderRadius: "4px 0 0 4px" }} />
+            <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}10, transparent 70%)`, pointerEvents: "none" }} />
+            <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 5, repeat: Infinity, repeatDelay: 4, ease: "easeInOut" }}
+              style={{ position: "absolute", top: 0, left: 0, width: "40%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)", pointerEvents: "none" }} />
 
-          <ul style={{ listStyle:"none", padding:0, margin:"0 0 22px", display:"flex", flexDirection:"column", gap:10 }}>
-            {[
-              "Developed 3+ full-stack applications using React, Angular, and FastAPI, improving modular architecture, reusability, and development speed.",
-              "Designed and implemented Agentic AI workflows using LangChain and LangGraph enabling dynamic decision-making, tool orchestration, and adaptive execution.",
-              "Built RAG pipelines integrating PostgreSQL and vector databases for semantic search, contextual retrieval, and improved recommendation relevance.",
-              "Applied Docker containerization and explored Kubernetes concepts including deployments, services, and scaling strategies.",
-            ].map((pt,i) => (
-              <motion.li key={i} custom={i+2} variants={slideLeft} style={{ display:"flex", gap:11, alignItems:"flex-start" }}>
-                <div style={{ width:19, height:19, borderRadius:"50%", background:`${c.blue}18`, border:`1px solid ${c.blue}36`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>
-                  <ChevronRight size={10} color={c.blueBright}/>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16, marginBottom: 28 }}>
+              <div style={{ display: "flex", gap: "clamp(12px,2vw,18px)", alignItems: "center" }}>
+                <motion.div whileHover={{ scale: 1.1, rotate: 5 }}
+                  style={{ width: 62, height: 62, borderRadius: 18, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18, color: "#fff", flexShrink: 0, boxShadow: `0 0 34px ${c.blue}50`, fontFamily: "monospace" }}>GW</motion.div>
+                <div>
+                  <h3 style={{ color: c.text, fontWeight: 800, fontSize: "clamp(15px,2.5vw,19px)", marginBottom: 5, lineHeight: 1.3, fontFamily: "'Syne', sans-serif" }}>Agentic AI Full Stack Developer Trainee</h3>
+                  <p style={{ color: c.textMuted, fontSize: 14 }}>Genworx.ai · Chennai, India</p>
                 </div>
-                <span style={{ color:c.textMuted, fontSize:"clamp(11px,1.5vw,13px)", lineHeight:1.75 }}>{pt}</span>
-              </motion.li>
-            ))}
-          </ul>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-            {["React","Angular","FastAPI","LangChain","LangGraph","RAG","Docker","PostgreSQL"].map(t => (
-              <motion.span key={t} whileHover={{ scale:1.07 }}
-                style={{ background:`${c.blue}11`, border:`1px solid ${c.blue}24`, borderRadius:7, padding:"4px 10px", color:c.blueBright, fontSize:11, fontWeight:600 }}>{t}</motion.span>
-            ))}
+              </div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ background: `${c.blue}22`, border: `1px solid ${c.blue}45`, color: c.blueBright, borderRadius: 100, padding: "5px 16px", fontSize: 12, fontWeight: 700 }}>Internship</span>
+                <span style={{ color: c.textDim, fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}><Calendar size={12} /> Aug 2025 – Feb 2026</span>
+              </div>
+            </div>
+
+            <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 13 }}>
+              {[
+                "Developed 3+ full-stack applications using React, Angular, and FastAPI, improving modular architecture, reusability, and development speed.",
+                "Designed and implemented Agentic AI workflows using LangChain and LangGraph enabling dynamic decision-making, tool orchestration, and adaptive execution.",
+                "Built RAG pipelines integrating PostgreSQL and vector databases for semantic search, contextual retrieval, and improved recommendation relevance.",
+                "Applied Docker containerization and explored Kubernetes concepts including deployments, services, and scaling strategies.",
+              ].map((point, i) => (
+                <motion.li key={i} custom={i+2} variants={slideLeft}
+                  style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: `${c.blue}18`, border: `1px solid ${c.blue}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                    <ChevronRight size={12} color={c.blueBright} />
+                  </div>
+                  <span style={{ color: c.textMuted, fontSize: "clamp(13px,1.8vw,14px)", lineHeight: 1.75 }}>{point}</span>
+                </motion.li>
+              ))}
+            </ul>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {["React", "Angular", "FastAPI", "LangChain", "LangGraph", "RAG", "Docker", "PostgreSQL"].map(t => (
+                <motion.span key={t} whileHover={{ scale: 1.08, y: -2 }}
+                  style={{ background: `${c.blue}12`, border: `1px solid ${c.blue}28`, borderRadius: 8, padding: "5px 13px", color: c.blueBright, fontSize: 12, fontWeight: 600, display: "inline-block", transition: "all 0.2s" }}>{t}</motion.span>
+              ))}
+            </div>
           </div>
         </motion.div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,260px),1fr))", gap:14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,290px), 1fr))", gap: 20 }}>
           {[
-            { icon:<GraduationCap size={19} color={c.cyan}/>, degree:"B.E. Computer Science & Engineering", school:"Sri Krishna College of Technology · 2022–2026", grade:"CGPA: 8.6", col:c.cyan },
-            { icon:<Briefcase size={19} color={c.violet}/>, degree:"Higher Secondary Education", school:"St. Antony's Matric Hr Sec School", grade:"Class 12: 91% · Class 10: 90%", col:c.violet },
-          ].map(({ icon,degree,school,grade,col }) => (
-            <motion.div key={degree} custom={6} variants={fadeUp}
-              whileHover={{ borderColor:col, boxShadow:`0 0 24px ${col}15`, y:-5 }}
-              style={{ background:c.glass, backdropFilter:"blur(14px)", border:"1px solid rgba(59,130,246,0.11)", borderRadius:16, padding:"clamp(14px,2.2vw,22px)", display:"flex", gap:13, alignItems:"flex-start", transition:"all 0.3s ease" }}>
-              <div style={{ width:43, height:43, borderRadius:12, background:`${col}15`, border:`1px solid ${col}26`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{icon}</div>
-              <div style={{ minWidth:0 }}>
-                <p style={{ color:c.text, fontWeight:700, fontSize:13, marginBottom:3, fontFamily:"'Syne',sans-serif" }}>{degree}</p>
-                <p style={{ color:c.textDim, fontSize:11, marginBottom:4 }}>{school}</p>
-                <p style={{ color:col, fontSize:11, fontWeight:700 }}>{grade}</p>
-              </div>
+            { icon: <GraduationCap size={22} color={c.cyan} />, degree: "B.E. Computer Science & Engineering", school: "Sri Krishna College of Technology · 2022–2026", grade: "CGPA: 8.6", col: c.cyan },
+            { icon: <Briefcase size={22} color={c.violet} />, degree: "Higher Secondary Education", school: "St. Antony's Matric Hr Sec School", grade: "Class 12: 91% · Class 10: 90%", col: c.violet },
+          ].map(({ icon, degree, school, grade, col }) => (
+            <motion.div key={degree} custom={6} variants={fadeUp}>
+              <Card3D
+                accentColor={col}
+                intensity={8}
+                style={{
+                  background: c.glass, backdropFilter: "blur(16px)",
+                  border: `1px solid rgba(59,130,246,0.13)`,
+                  borderRadius: 20, padding: "clamp(18px,3vw,28px)",
+                  display: "flex", gap: 18, alignItems: "flex-start",
+                  height: "100%",
+                }}>
+                <div style={{ width: 52, height: 52, borderRadius: 15, background: `${col}16`, border: `1px solid ${col}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>
+                <div>
+                  <p style={{ color: c.text, fontWeight: 700, fontSize: 15, marginBottom: 5, fontFamily: "'Syne', sans-serif" }}>{degree}</p>
+                  <p style={{ color: c.textDim, fontSize: 13, marginBottom: 7 }}>{school}</p>
+                  <p style={{ color: col, fontSize: 13, fontWeight: 700 }}>{grade}</p>
+                </div>
+              </Card3D>
             </motion.div>
           ))}
         </div>
@@ -698,57 +1050,78 @@ function Experience() {
 /* ─── PROJECTS ────────────────────────────────────────────── */
 function Projects() {
   return (
-    <Section id="projects" style={{ padding:"clamp(68px,9vw,108px) 0" }}>
+    <Section id="projects" style={{ padding: "clamp(80px,10vw,120px) 0" }}>
       <GlowDivider />
-      <div style={{ maxWidth:1160, margin:"0 auto", padding:"clamp(40px,6vw,76px) 20px 0" }}>
-        <motion.div variants={fadeUp} custom={0} style={{ textAlign:"center", marginBottom:"clamp(36px,5vw,62px)" }}>
-          <p style={{ color:c.cyan, fontSize:10, fontWeight:700, letterSpacing:"0.26em", textTransform:"uppercase", marginBottom:11 }}>My Work</p>
-          <h2 style={{ fontSize:"clamp(26px,4.8vw,54px)", fontWeight:900, color:c.text, letterSpacing:"-1.5px", fontFamily:"'Syne',sans-serif" }}>
-            Featured <span style={{ background:`linear-gradient(135deg,${c.blueBright},${c.cyan})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>Projects</span>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(50px,6vw,90px) clamp(16px,4vw,24px) 0" }}>
+        <motion.div variants={fadeUp} custom={0} style={{ textAlign: "center", marginBottom: "clamp(50px,7vw,80px)" }}>
+          <p style={{ color: c.cyan, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 14 }}>My Work</p>
+          <h2 style={{ fontSize: "clamp(30px,5.5vw,62px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", fontFamily: "'Syne', sans-serif" }}>
+            Featured{" "}
+            <span style={{ background: `linear-gradient(135deg, ${c.blueBright}, ${c.cyan})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Projects</span>
           </h2>
         </motion.div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,270px),1fr))", gap:"clamp(12px,1.8vw,20px)" }}>
-          {PROJECTS.map((proj,i) => (
-            <motion.div key={proj.id} custom={i+1} variants={fadeUp}
-              whileHover={{ y:-11, boxShadow:`0 32px 72px ${proj.accent}1e, 0 0 0 1px ${proj.accent}36` }}
-              style={{ background:c.glass, backdropFilter:"blur(16px)", border:"1px solid rgba(59,130,246,0.12)", borderRadius:21, padding:"clamp(16px,2.2vw,26px)", position:"relative", overflow:"hidden", transition:"all 0.4s ease" }}>
-              <div style={{ position:"absolute", top:0, right:0, width:130, height:130, borderRadius:"0 21px 0 130px", background:`${proj.accent}0a`, pointerEvents:"none" }} />
-              <motion.div animate={{ x:["-100%","220%"] }} transition={{ duration:3.5, repeat:Infinity, repeatDelay:5 }}
-                style={{ position:"absolute", top:0, left:0, width:"30%", height:"100%", background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.032),transparent)", pointerEvents:"none" }} />
 
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
-                <motion.div whileHover={{ scale:1.12, rotate:7 }}
-                  style={{ width:50, height:50, borderRadius:14, background:`${proj.accent}1e`, border:`1px solid ${proj.accent}36`, display:"flex", alignItems:"center", justifyContent:"center", boxShadow:`0 0 20px ${proj.accent}22` }}>
-                  <proj.Icon size={24} color={proj.accent} strokeWidth={1.5}/>
-                </motion.div>
-                <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:5 }}>
-                  <span style={{ background:`${proj.accent}1c`, border:`1px solid ${proj.accent}40`, color:proj.accent, borderRadius:100, padding:"4px 12px", fontSize:10, fontWeight:800, letterSpacing:"0.08em" }}>{proj.tag}</span>
-                  {proj.badge && <span style={{ background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.28)", color:"#22c55e", borderRadius:100, padding:"3px 9px", fontSize:10, fontWeight:700 }}>{proj.badge}</span>}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,300px), 1fr))", gap: "clamp(16px,2.5vw,24px)" }}>
+          {PROJECTS.map((proj, i) => (
+            <motion.div key={proj.id} custom={i+1} variants={fadeUp}>
+              <Card3D
+                accentColor={proj.accent}
+                intensity={12}
+                style={{
+                  background: c.glass, backdropFilter: "blur(18px)",
+                  border: `1px solid rgba(59,130,246,0.14)`,
+                  borderRadius: 26, padding: "clamp(22px,3vw,32px)",
+                  height: "100%", cursor: "pointer",
+                }}>
+                <div style={{ position: "absolute", top: 0, right: 0, width: 160, height: 160, borderRadius: "0 26px 0 160px", background: `${proj.accent}0c`, pointerEvents: "none" }} />
+                <div style={{ position: "absolute", bottom: 0, left: 0, width: 100, height: 100, borderRadius: "0 100px 0 26px", background: `${proj.accent}07`, pointerEvents: "none" }} />
+                <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 5, ease: "easeInOut" }}
+                  style={{ position: "absolute", top: 0, left: 0, width: "35%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)", pointerEvents: "none" }} />
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 }}>
+                  <motion.div whileHover={{ scale: 1.15, rotate: 8 }}
+                    style={{ width: 62, height: 62, borderRadius: 18, background: `${proj.accent}22`, border: `1px solid ${proj.accent}40`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 28px ${proj.accent}28` }}>
+                    <proj.Icon size={30} color={proj.accent} strokeWidth={1.5} />
+                  </motion.div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                    <span style={{ background: `${proj.accent}20`, border: `1px solid ${proj.accent}45`, color: proj.accent, borderRadius: 100, padding: "5px 16px", fontSize: 11, fontWeight: 800, letterSpacing: "0.09em" }}>{proj.tag}</span>
+                    {proj.badge && (
+                      <span style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 700 }}>{proj.badge}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div style={{ marginBottom:9 }}>
-                <h3 style={{ color:c.text, fontWeight:900, fontSize:"clamp(14px,2vw,17px)", marginBottom:2, fontFamily:"'Syne',sans-serif" }}>{proj.title}</h3>
-                <p style={{ color:proj.accent, fontSize:11, fontWeight:600, opacity:0.8 }}>{proj.subtitle}</p>
-              </div>
-              <p style={{ color:c.textDim, fontSize:"clamp(11px,1.3vw,12px)", lineHeight:1.8, marginBottom:16 }}>{proj.desc}</p>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:17 }}>
-                {proj.stack.map(s => (
-                  <span key={s} style={{ background:`${c.blue}0d`, border:`1px solid ${c.blue}1c`, borderRadius:5, padding:"3px 8px", color:c.textMuted, fontSize:10, fontWeight:500 }}>{s}</span>
-                ))}
-              </div>
-              <div style={{ display:"flex", gap:13, flexWrap:"wrap" }}>
-                <motion.a href={proj.link} target="_blank" rel="noreferrer" whileHover={{ x:3 }}
-                  style={{ display:"inline-flex", alignItems:"center", gap:5, color:proj.accent, fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                  <ExternalLink size={11}/> {proj.id===3?"HuggingFace Hub":"View Project"} <ArrowUpRight size={10}/>
-                </motion.a>
-                {proj.colab && (
-                  <motion.a href={proj.colab} target="_blank" rel="noreferrer" whileHover={{ x:3 }}
-                    style={{ display:"inline-flex", alignItems:"center", gap:5, color:c.cyan, fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                    <ExternalLink size={11}/> Colab <ArrowUpRight size={10}/>
+
+                <div style={{ marginBottom: 12 }}>
+                  <h3 style={{ color: c.text, fontWeight: 900, fontSize: "clamp(17px,2.5vw,20px)", marginBottom: 3, lineHeight: 1.2, fontFamily: "'Syne', sans-serif" }}>{proj.title}</h3>
+                  <p style={{ color: proj.accent, fontSize: 13, fontWeight: 600, opacity: 0.8 }}>{proj.subtitle}</p>
+                </div>
+
+                <p style={{ color: c.textDim, fontSize: "clamp(12px,1.8vw,13px)", lineHeight: 1.8, marginBottom: 22 }}>{proj.desc}</p>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 24 }}>
+                  {proj.stack.map((s) => (
+                    <span key={s} style={{ background: `${c.blue}0e`, border: `1px solid ${c.blue}20`, borderRadius: 7, padding: "4px 10px", color: c.textMuted, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                  <motion.a href={proj.link} target="_blank" rel="noreferrer"
+                    whileHover={{ x: 4 }}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 7, color: proj.accent, fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+                    <ExternalLink size={13} /> {proj.id === 3 ? "HuggingFace Hub" : "View Project"}
+                    <ArrowUpRight size={12} />
                   </motion.a>
-                )}
-              </div>
-              <div style={{ position:"absolute", bottom:0, left:0, right:0, height:2, background:`linear-gradient(90deg,${proj.accent}70,${proj.accent}18,transparent)` }} />
+                  {proj.colab && (
+                    <motion.a href={proj.colab} target="_blank" rel="noreferrer"
+                      whileHover={{ x: 4 }}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 7, color: c.cyan, fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+                      <ExternalLink size={13} /> Colab <ArrowUpRight size={12} />
+                    </motion.a>
+                  )}
+                </div>
+
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${proj.accent}80, ${proj.accent}20, transparent)`, borderRadius: "0 0 26px 26px" }} />
+              </Card3D>
             </motion.div>
           ))}
         </div>
@@ -760,75 +1133,104 @@ function Projects() {
 /* ─── CONTACT ─────────────────────────────────────────────── */
 function Contact() {
   const [copied, setCopied] = useState(false);
-  const copy = () => { navigator.clipboard.writeText("shaikhaniscoder07@gmail.com"); setCopied(true); setTimeout(() => setCopied(false),2200); };
+  const copy = () => { navigator.clipboard.writeText("shaikhaniscoder07@gmail.com"); setCopied(true); setTimeout(() => setCopied(false), 2400); };
+  const { ref, transform, glowPos, handleMouseMove, handleMouseLeave } = use3DCard(7);
 
   return (
-    <Section id="contact" style={{ padding:"clamp(68px,9vw,108px) 0" }}>
+    <Section id="contact" style={{ padding: "clamp(80px,10vw,120px) 0" }}>
       <GlowDivider />
-      <div style={{ maxWidth:1160, margin:"0 auto", padding:"clamp(40px,6vw,76px) 20px 0" }}>
-        <div className="contact-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"clamp(24px,5vw,56px)", alignItems:"start" }}>
-          <div style={{ minWidth:0 }}>
-            <motion.p variants={fadeUp} custom={0} style={{ color:c.cyan, fontSize:10, fontWeight:700, letterSpacing:"0.26em", textTransform:"uppercase", marginBottom:11 }}>Get In Touch</motion.p>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(50px,6vw,90px) clamp(16px,4vw,24px) 0" }}>
+        <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(36px,5vw,70px)", alignItems: "start" }}>
+          <div>
+            <motion.p variants={fadeUp} custom={0} style={{ color: c.cyan, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 14 }}>Get In Touch</motion.p>
             <motion.h2 variants={fadeUp} custom={1}
-              style={{ fontSize:"clamp(26px,4.8vw,54px)", fontWeight:900, color:c.text, letterSpacing:"-1.5px", marginBottom:16, lineHeight:1.02, fontFamily:"'Syne',sans-serif" }}>
-              Let's Build<br/>Something{" "}
-              <span style={{ background:`linear-gradient(135deg,${c.blueBright},${c.cyan})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>Great</span>
+              style={{ fontSize: "clamp(30px,5.5vw,62px)", fontWeight: 900, color: c.text, letterSpacing: "-2px", marginBottom: 22, lineHeight: 1.02, fontFamily: "'Syne', sans-serif" }}>
+              Let's Build<br />Something{" "}
+              <span style={{ background: `linear-gradient(135deg, ${c.blueBright}, ${c.cyan})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Great</span>
             </motion.h2>
-            <motion.p variants={fadeUp} custom={2} style={{ color:c.textDim, fontSize:"clamp(11px,1.4vw,13px)", lineHeight:1.85, marginBottom:30 }}>
+            <motion.p variants={fadeUp} custom={2}
+              style={{ color: c.textDim, fontSize: "clamp(13px,1.8vw,15px)", lineHeight: 1.85, marginBottom: 44 }}>
               Open to full-time roles, freelance projects, and AI / Full Stack collaborations. Based in Coimbatore — available remotely worldwide.
             </motion.p>
-            <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {[
-                { icon:<Mail size={13} color={c.blueBright}/>, label:"shaikhaniscoder07@gmail.com", href:"mailto:shaikhaniscoder07@gmail.com" },
-                { icon:<Phone size={13} color={c.cyan}/>, label:"+91 7548899769", href:"tel:+917548899769" },
-                { icon:<FaLinkedin size={13} color={c.blueBright}/>, label:"LinkedIn — shaikh-anis-s", href:"https://www.linkedin.com/in/shaikh-anis-s/" },
-              ].map(({ icon,label,href },i) => (
-                <motion.a key={label} custom={i+3} variants={fadeUp} href={href} target="_blank" rel="noreferrer"
-                  whileHover={{ x:8, background:`${c.blue}0d` }}
-                  style={{ display:"inline-flex", alignItems:"center", gap:11, color:c.textMuted, textDecoration:"none", fontSize:12, fontWeight:500, padding:"8px 11px", borderRadius:10, transition:"all 0.2s" }}>
-                  <div style={{ width:36, height:36, borderRadius:10, background:`${c.blue}11`, border:`1px solid ${c.blue}1e`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{icon}</div>
-                  <span style={{ fontSize:"clamp(10px,1.4vw,12px)" }}>{label}</span>
-                  <ArrowUpRight size={11} style={{ marginLeft:"auto", opacity:0.28 }}/>
+                { icon: <Mail size={15} color={c.blueBright} />, label: "shaikhaniscoder07@gmail.com", href: "mailto:shaikhaniscoder07@gmail.com" },
+                { icon: <Phone size={15} color={c.cyan} />, label: "+91 7548899769", href: "tel:+917548899769" },
+                { icon: <FaLinkedin size={15} color={c.blueBright} />, label: "LinkedIn — shaikh-anis-s", href: "https://www.linkedin.com/in/shaikh-anis-s/" },
+              ].map(({ icon, label, href }, i) => (
+                <motion.a key={label} custom={i+3} variants={fadeUp}
+                  href={href} target="_blank" rel="noreferrer"
+                  whileHover={{ x: 10, background: `${c.blue}10` }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 14, color: c.textMuted, textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "10px 14px", borderRadius: 13, transition: "all 0.25s" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 13, background: `${c.blue}12`, border: `1px solid ${c.blue}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>
+                  <span style={{ fontSize: "clamp(12px,1.8vw,14px)" }}>{label}</span>
+                  <ArrowUpRight size={13} style={{ marginLeft: "auto", opacity: 0.35 }} />
                 </motion.a>
               ))}
             </div>
           </div>
 
+          {/* Right card with 3D */}
           <motion.div variants={scaleIn}>
-            <div style={{ background:c.glass, backdropFilter:"blur(22px)", border:"1px solid rgba(59,130,246,0.14)", borderRadius:22, padding:"clamp(18px,3vw,36px)", position:"relative", overflow:"hidden", boxShadow:`0 0 70px ${c.blue}0c` }}>
-              <motion.div animate={{ x:["-100%","220%"] }} transition={{ duration:5, repeat:Infinity, repeatDelay:4 }}
-                style={{ position:"absolute", top:0, left:0, width:"36%", height:"100%", background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.024),transparent)", pointerEvents:"none" }} />
-              <p style={{ color:c.textDim, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:14 }}>Drop a message</p>
-              <motion.div onClick={copy} whileHover={{ borderColor:c.blue }} whileTap={{ scale:0.98 }}
-                style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(2,8,20,0.5)", border:`1px solid ${c.border}`, borderRadius:11, padding:"10px 14px", cursor:"pointer", marginBottom:11, transition:"border-color 0.22s" }}>
-                <span style={{ color:c.textMuted, fontSize:"clamp(10px,1.3vw,11px)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>shaikhaniscoder07@gmail.com</span>
+            <div
+              ref={ref}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              style={{
+                background: c.glass, backdropFilter: "blur(24px)",
+                border: `1px solid rgba(59,130,246,0.16)`,
+                borderRadius: 28, padding: "clamp(24px,4vw,44px)",
+                boxShadow: `0 0 100px ${c.blue}10, 0 60px 80px rgba(0,0,0,0.25)`,
+                position: "relative", overflow: "hidden",
+                transform, transition: "transform 0.12s ease-out",
+                transformStyle: "preserve-3d",
+              }}>
+              {/* Dynamic glow */}
+              <div style={{ position: "absolute", inset: 0, borderRadius: 28, pointerEvents: "none", background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, rgba(37,99,235,0.12) 0%, transparent 60%)`, transition: "background 0.1s ease" }} />
+
+              <div style={{ position: "absolute", top: -70, right: -70, width: 220, height: 220, borderRadius: "50%", background: `radial-gradient(circle, ${c.blue}10, transparent 70%)`, pointerEvents: "none" }} />
+              <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 5, repeat: Infinity, repeatDelay: 4 }}
+                style={{ position: "absolute", top: 0, left: 0, width: "40%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)", pointerEvents: "none" }} />
+
+              <p style={{ color: c.textDim, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 20 }}>Drop a message</p>
+
+              <motion.div onClick={copy}
+                whileHover={{ borderColor: c.blue, boxShadow: `0 0 28px ${c.blue}22` }}
+                whileTap={{ scale: 0.98 }}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(3,11,22,0.5)", border: `1px solid ${c.border}`, borderRadius: 14, padding: "13px 18px", cursor: "pointer", marginBottom: 14, transition: "all 0.25s" }}>
+                <span style={{ color: c.textMuted, fontSize: "clamp(11px,1.6vw,13px)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>shaikhaniscoder07@gmail.com</span>
                 <AnimatePresence mode="wait">
                   {copied
-                    ? <motion.span key="c" initial={{ scale:0 }} animate={{ scale:1 }} exit={{ scale:0 }}><Check size={13} color="#22c55e"/></motion.span>
-                    : <motion.span key="d" initial={{ scale:0 }} animate={{ scale:1 }} exit={{ scale:0 }}><Copy size={13} color={c.blueBright}/></motion.span>}
+                    ? <motion.span key="c" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}><Check size={16} color="#22c55e" /></motion.span>
+                    : <motion.span key="d" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}><Copy size={16} color={c.blueBright} /></motion.span>}
                 </AnimatePresence>
               </motion.div>
+
               <motion.a href="mailto:shaikhaniscoder07@gmail.com"
-                whileHover={{ scale:1.02, boxShadow:`0 0 30px ${c.blue}50` }} whileTap={{ scale:0.97 }}
-                style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:7, padding:13, borderRadius:11, background:`linear-gradient(135deg,${c.blue},${c.blueGlow})`, color:"#fff", fontWeight:700, fontSize:13, textDecoration:"none", marginBottom:18, boxShadow:`0 0 18px ${c.blue}3e` }}>
-                <Mail size={13}/> Send Email
+                whileHover={{ scale: 1.02, boxShadow: `0 0 40px ${c.blue}60` }}
+                whileTap={{ scale: 0.97 }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, padding: 16, borderRadius: 14, background: `linear-gradient(135deg, ${c.blue}, ${c.blueGlow})`, color: "#fff", fontWeight: 700, fontSize: 15, textDecoration: "none", marginBottom: 24, boxShadow: `0 0 24px ${c.blue}44` }}>
+                <Mail size={16} /> Send Email
               </motion.a>
-              <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:13 }}>
-                <div style={{ flex:1, height:1, background:`linear-gradient(90deg,transparent,${c.border})` }} />
-                <span style={{ color:c.textDim, fontSize:10 }}>or connect on</span>
-                <div style={{ flex:1, height:1, background:`linear-gradient(90deg,${c.border},transparent)` }} />
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
+                <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${c.border})` }} />
+                <span style={{ color: c.textDim, fontSize: 12 }}>or connect on</span>
+                <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${c.border}, transparent)` }} />
               </div>
-              <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {[
-                  { label:"LinkedIn",    icon:<FaLinkedin size={12}/>, href:"https://www.linkedin.com/in/shaikh-anis-s/" },
-                  { label:"GitHub",      icon:<GitBranch size={12}/>,  href:"https://github.com/Shaikhanis7" },
-                  { label:"LeetCode",    icon:<Code2 size={12}/>,      href:"https://leetcode.com/u/Shaikh_the_coder/" },
-                  { label:"GFG",         icon:<Cpu size={12}/>,        href:"https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity" },
-                  { label:"HuggingFace", icon:<Mic size={12}/>,        href:"https://huggingface.co/ShaikhAnis007" },
-                ].map(({ label,icon,href }) => (
+                  { label: "LinkedIn", icon: <FaLinkedin size={14} />, href: "https://www.linkedin.com/in/shaikh-anis-s/" },
+                  { label: "GitHub", icon: <GitBranch size={14} />, href: "https://github.com/Shaikhanis7" },
+                  { label: "LeetCode", icon: <Code2 size={14} />, href: "https://leetcode.com/u/Shaikh_the_coder/" },
+                  { label: "GFG", icon: <Cpu size={14} />, href: "https://www.geeksforgeeks.org/profile/shaikhanibqym?tab=activity" },
+                  { label: "HuggingFace", icon: <Mic size={14} />, href: "https://huggingface.co/ShaikhAnis007" },
+                ].map(({ label, icon, href }) => (
                   <motion.a key={label} href={href} target="_blank" rel="noreferrer"
-                    whileHover={{ scale:1.06, borderColor:c.blue }}
-                    style={{ flex:"1 1 auto", minWidth:"calc(33% - 6px)", display:"flex", alignItems:"center", justifyContent:"center", gap:5, padding:"10px 5px", borderRadius:10, border:`1px solid ${c.border}`, color:c.textMuted, fontWeight:600, fontSize:"clamp(9px,1.2vw,10px)", textDecoration:"none", transition:"all 0.2s", background:"rgba(2,8,20,0.28)" }}>
+                    whileHover={{ scale: 1.06, borderColor: c.blue, boxShadow: `0 0 16px ${c.blue}22`, y: -2 }}
+                    style={{ flex: "1 1 auto", minWidth: "calc(33% - 8px)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "13px 8px", borderRadius: 13, border: `1px solid ${c.border}`, color: c.textMuted, fontWeight: 600, fontSize: "clamp(10px,1.5vw,12px)", textDecoration: "none", transition: "all 0.25s", background: "rgba(3,9,18,0.3)" }}>
                     {icon} {label}
                   </motion.a>
                 ))}
@@ -844,18 +1246,18 @@ function Contact() {
 /* ─── FOOTER ──────────────────────────────────────────────── */
 function Footer() {
   return (
-    <footer style={{ borderTop:"1px solid rgba(59,130,246,0.08)", padding:"24px 20px", position:"relative", zIndex:1 }}>
-      <div style={{ maxWidth:1160, margin:"0 auto", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:9 }}>
-          <div style={{ width:30, height:30, borderRadius:8, background:`linear-gradient(135deg,${c.blue},${c.cyan})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:900, color:"#fff", boxShadow:`0 0 13px ${c.blue}45` }}>SA</div>
+    <footer style={{ borderTop: `1px solid rgba(59,130,246,0.1)`, padding: "36px clamp(16px,4vw,24px)", position: "relative", zIndex: 1 }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 11, background: `linear-gradient(135deg, ${c.blue}, ${c.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#fff", boxShadow: `0 0 18px ${c.blue}50` }}>SA</div>
           <div>
-            <div style={{ color:c.text, fontWeight:700, fontSize:12, fontFamily:"'Syne',sans-serif" }}>Shaikh Anis</div>
-            <div style={{ color:c.textDim, fontSize:10 }}>Coimbatore, India</div>
+            <div style={{ color: c.text, fontWeight: 700, fontSize: 14, fontFamily: "'Syne', sans-serif" }}>Shaikh Anis</div>
+            <div style={{ color: c.textDim, fontSize: 12 }}>Coimbatore, India</div>
           </div>
         </div>
-        <div style={{ display:"flex", gap:"clamp(12px,2.5vw,24px)", alignItems:"center", flexWrap:"wrap" }}>
-          <p style={{ color:c.textDim, fontSize:10 }}>Built with React & WebGL Water</p>
-          <p style={{ color:c.textDim, fontSize:10 }}>© 2025 All rights reserved</p>
+        <div style={{ display: "flex", gap: "clamp(18px,3vw,32px)", alignItems: "center", flexWrap: "wrap" }}>
+          <p style={{ color: c.textDim, fontSize: 12 }}>Built with React & Three.js</p>
+          <p style={{ color: c.textDim, fontSize: 12 }}>© 2025 All rights reserved</p>
         </div>
       </div>
     </footer>
@@ -865,34 +1267,73 @@ function Footer() {
 /* ─── SCROLL PROGRESS ─────────────────────────────────────── */
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness:100, damping:30, restDelta:0.001 });
-  return <motion.div style={{ position:"fixed", top:0, left:0, right:0, height:2, zIndex:200, background:`linear-gradient(90deg,${c.blue},${c.cyan},${c.violet})`, transformOrigin:"0%", scaleX }} />;
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  return (
+    <motion.div style={{
+      position: "fixed", top: 0, left: 0, right: 0, height: 2, zIndex: 200,
+      background: `linear-gradient(90deg, ${c.blue}, ${c.cyan}, ${c.violet})`,
+      transformOrigin: "0%", scaleX,
+    }} />
+  );
 }
 
-/* ─── GLOBAL CSS ──────────────────────────────────────────── */
+/* ─── GLOBAL STYLES ───────────────────────────────────────── */
 const GlobalStyles = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html{scroll-behavior:smooth;}
-    body{background:#020810;color:#eef4ff;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;width:100%;max-width:100vw;}
-    h1,h2,h3{font-family:'Syne',sans-serif;}
-    ::-webkit-scrollbar{width:3px;}
-    ::-webkit-scrollbar-track{background:#020810;}
-    ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#2563eb,#06b6d4,#7c3aed);border-radius:3px;}
-    ::selection{background:rgba(37,99,235,0.28);color:#eef4ff;}
-    img,canvas,video{max-width:100%;}
-    @media(max-width:768px){
-      .hero-grid{grid-template-columns:1fr!important;}
-      .hero-card{display:none!important;}
-      .contact-grid{grid-template-columns:1fr!important;}
-      .nav-desktop{display:none!important;}
-      .nav-mobile-btn{display:flex!important;}
-      .avail-mobile{display:inline-flex!important;}
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #030912;
+      color: #eef4ff;
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      /* Fix: ensure body doesn't exceed viewport width */
+      max-width: 100vw;
     }
-    @media(max-width:480px){
-      .hero-grid{padding-top:88px!important;}
-      .soc-label{display:none;}
+    h1, h2, h3 { font-family: 'Syne', sans-serif; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #030912; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #2563eb, #06b6d4, #7c3aed); border-radius: 4px; }
+    ::selection { background: rgba(37,99,235,0.35); color: #eef4ff; }
+
+    @keyframes orbFloat1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(3%,4%) scale(1.06); } }
+    @keyframes orbFloat2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-4%,-3%) scale(1.08); } }
+    @keyframes orbFloat3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(2%,-5%) scale(1.05); } }
+
+    /* ─── MOBILE: fix overflow & layout ─── */
+    @media (max-width: 768px) {
+      .hero-grid {
+        grid-template-columns: 1fr !important;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+      }
+      .hero-card { display: none !important; }
+      .contact-grid { grid-template-columns: 1fr !important; }
+      .nav-desktop { display: none !important; }
+      .nav-mobile-btn { display: flex !important; }
+      .avail-mobile { display: inline-flex !important; }
+
+      /* Prevent horizontal overflow on mobile */
+      section, .hero-grid, .max {
+        overflow-x: hidden;
+        max-width: 100vw;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-grid { padding-top: 100px !important; }
+      .social-label { display: none; }
+
+      /* Ensure no element bleeds out on small screens */
+      * { max-width: 100%; }
+      img, canvas { max-width: 100vw; }
+    }
+
+    /* ─── 3D CARD PERSPECTIVE PARENT ─── */
+    .card-perspective {
+      perspective: 1200px;
     }
   `}</style>
 );
@@ -900,14 +1341,14 @@ const GlobalStyles = () => (
 /* ─── APP ─────────────────────────────────────────────────── */
 export default function App() {
   const [active, setActive] = useState("home");
+
   useEffect(() => {
+    const sections = ["home", "skills", "experience", "projects", "contact"];
     const obs = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); }),
-      { threshold: 0.18 }
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) setActive(e.target.id); }),
+      { threshold: 0.2 }
     );
-    ["home","skills","experience","projects","contact"].forEach(id => {
-      const el = document.getElementById(id); if (el) obs.observe(el);
-    });
+    sections.forEach((id) => { const el = document.getElementById(id); if (el) obs.observe(el); });
     return () => obs.disconnect();
   }, []);
 
@@ -916,8 +1357,9 @@ export default function App() {
       <GlobalStyles />
       <MagneticCursor />
       <ScrollProgress />
-      <WaterBackground />
-      <div style={{ background:"transparent", minHeight:"100vh", position:"relative", width:"100%", overflowX:"hidden" }}>
+      <ThreeBackground />
+      <GlowOrbs />
+      <div style={{ background: "transparent", minHeight: "100vh", position: "relative", overflowX: "hidden" }}>
         <Navbar active={active} />
         <Hero />
         <Skills />
